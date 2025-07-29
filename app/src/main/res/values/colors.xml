@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 主色调 - 橙色系 -->
-    <color name="orange_primary">#FF6B35</color>
-    <color name="orange_primary_dark">#E55A2B</color>
-    <color name="orange_light">#FF8A65</color>
-    <color name="orange_accent">#FF7043</color>
+    <!-- 主色调 - 黑白灰 -->
+    <color name="primary">#212121</color>
+    <color name="primary_dark">#000000</color>
+    <color name="primary_light">#424242</color>
+    <color name="accent">#757575</color>
 
     <!-- 背景色 -->
     <color name="background_primary">#FAFAFA</color>
@@ -29,16 +29,16 @@
     <color name="gray_800">#424242</color>
     <color name="gray_900">#212121</color>
 
-    <!-- 状态颜色 -->
-    <color name="success_green">#4CAF50</color>
-    <color name="error_red">#F44336</color>
-    <color name="warning_amber">#FF9800</color>
+    <!-- 状态颜色 - 改为灰度 -->
+    <color name="success">#616161</color>
+    <color name="error">#424242</color>
+    <color name="warning">#757575</color>
 
     <!-- 分割线和边框 -->
     <color name="divider">#E0E0E0</color>
     <color name="border">#EEEEEE</color>
 
-    <!-- 兼容系统颜色 -->
+    <!-- 基础颜色 -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 </resources>

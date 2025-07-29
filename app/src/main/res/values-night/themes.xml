@@ -2,13 +2,13 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.HdbPilot_client" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- 主色调 -->
-        <item name="colorPrimary">@color/orange_primary</item>
-        <item name="colorPrimaryVariant">@color/orange_primary_dark</item>
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_dark</item>
         <item name="colorOnPrimary">@color/text_on_primary</item>
         
         <!-- 次要色调 -->
-        <item name="colorSecondary">@color/orange_accent</item>
-        <item name="colorSecondaryVariant">@color/orange_light</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorSecondaryVariant">@color/primary_light</item>
         <item name="colorOnSecondary">@color/text_on_primary</item>
         
         <!-- 夜间模式背景色 -->
@@ -18,7 +18,7 @@
         <item name="colorOnSurface">#E0E0E0</item>
         
         <!-- 错误色 -->
-        <item name="colorError">@color/error_red</item>
+        <item name="colorError">@color/error</item>
         <item name="colorOnError">@color/text_on_primary</item>
         
         <!-- 夜间模式文字颜色 -->
@@ -28,8 +28,8 @@
         
         <!-- 控件颜色 -->
         <item name="colorControlNormal">#666666</item>
-        <item name="colorControlActivated">@color/orange_primary</item>
-        <item name="colorControlHighlight">@color/orange_light</item>
+        <item name="colorControlActivated">@color/primary</item>
+        <item name="colorControlHighlight">@color/gray_300</item>
         
         <!-- 状态栏和导航栏 -->
         <item name="android:statusBarColor">#1F1F1F</item>

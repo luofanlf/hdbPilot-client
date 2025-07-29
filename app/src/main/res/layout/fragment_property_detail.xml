@@ -59,7 +59,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
-            app:cardBackgroundColor="@android:color/white"
+            app:cardBackgroundColor="@color/background_card"
             app:cardCornerRadius="12dp"
             app:cardElevation="3dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -89,7 +89,7 @@
                         android:id="@+id/resalePriceText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/black"
+                        android:textColor="@color/text_primary"
                         android:textSize="20sp"
                         android:textStyle="bold"
                         tools:text="$450,000" />
@@ -113,7 +113,7 @@
                         android:id="@+id/forecastPriceText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/black"
+                        android:textColor="@color/text_primary"
                         android:textSize="20sp"
                         android:textStyle="bold"
                         tools:text="$480,000" />
@@ -157,7 +157,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_bedroom"
-                        app:tint="@color/orange_primary" />
+                        app:tint="@color/primary" />
 
                     <TextView
                         android:id="@+id/bedroomText"
@@ -185,7 +185,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_bathroom"
-                        app:tint="@color/orange_primary" />
+                        app:tint="@color/primary" />
 
                     <TextView
                         android:id="@+id/bathroomText"
@@ -213,7 +213,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_area"
-                        app:tint="@color/orange_primary" />
+                        app:tint="@color/primary" />
 
                     <TextView
                         android:id="@+id/areaText"
@@ -241,7 +241,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_storey"
-                        app:tint="@color/orange_primary" />
+                        app:tint="@color/primary" />
 
                     <TextView
                         android:id="@+id/storeyText"
@@ -355,7 +355,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textStyle="bold"
-                        android:textColor="@color/success_green"
+                        android:textColor="@color/text_primary"
                         tools:text="Available" />
 
                 </LinearLayout>
@@ -395,7 +395,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="50dp"
             android:visibility="gone"
-            android:indeterminateTint="@color/orange_primary"
+            android:indeterminateTint="@color/primary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/propertyImageView" />
@@ -407,7 +407,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="50dp"
             android:text="Failed to load property details"
-            android:textColor="@color/error_red"
+            android:textColor="@color/error"
             android:textSize="16sp"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"

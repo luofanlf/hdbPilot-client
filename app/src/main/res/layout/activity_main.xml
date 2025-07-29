@@ -26,7 +26,7 @@
             app:title="HDBPILOT"
             app:titleTextColor="@color/text_primary"
             app:navigationIcon="@drawable/ic_logo"
-            app:navigationIconTint="@color/orange_primary" />
+            app:navigationIconTint="@color/primary" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -53,6 +53,6 @@
         app:menu="@menu/bottom_nav_menu"
         app:itemIconTint="@color/bottom_nav_color"
         app:itemTextColor="@color/bottom_nav_color"
-        app:itemRippleColor="@color/orange_light" /> <!-- 指向下面的菜单文件 -->
+        app:itemRippleColor="@color/gray_300" /> <!-- 指向下面的菜单文件 -->
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
