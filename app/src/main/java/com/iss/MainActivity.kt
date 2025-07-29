@@ -1,5 +1,6 @@
 package com.iss
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -19,6 +20,12 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+
+
+
+        //val intent = Intent(this, PredActivity::class.java)
+        //startActivity(intent)
 
         // 设置Navigation Controller与底部导航栏的连接
         val navHostFragment = supportFragmentManager
