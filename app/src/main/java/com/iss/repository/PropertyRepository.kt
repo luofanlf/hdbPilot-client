@@ -42,4 +42,31 @@ class PropertyRepository {
             Result.failure(e)
         }
     }
+
+    suspend fun getPropertyById(id: Long): Result<Property> = withContext(Dispatchers.IO) {
+        try {
+            Log.d("PropertyRepository", "Making API call for property detail, id: $id")
+            val response = propertyApi.getPropertyById(id)
+            Log.d("PropertyRepository", "Property detail - Response code: ${response.code()}")
+            
+            if (response.isSuccessful) {
+                val apiResponse = response.body()
+                Log.d("PropertyRepository", "Property detail - Response body: $apiResponse")
+                
+                if (apiResponse != null && apiResponse.data != null) {
+                    Log.d("PropertyRepository", "Property detail - Success: ${apiResponse.data.listingTitle}")
+                    Result.success(apiResponse.data)
+                } else {
+                    Log.e("PropertyRepository", "Property detail - Response or data is null")
+                    Result.failure(Exception("Property not found"))
+                }
+            } else {
+                Log.e("PropertyRepository", "Property detail - API request failed: ${response.code()} - ${response.message()}")
+                Result.failure(Exception("API request failed: ${response.code()} - ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("PropertyRepository", "Exception in getPropertyById", e)
+            Result.failure(e)
+        }
+    }
 } 

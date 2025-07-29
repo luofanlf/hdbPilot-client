@@ -21,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.navigation.fragment.findNavController
 
 class HomeFragment : Fragment() {
 
@@ -140,9 +141,17 @@ class HomeFragment : Fragment() {
     }
 
     private fun onPropertyClick(property: Property) {
-        // TODO: 跳转到房源详情页面
-        // 这里可以添加导航到详情页面的逻辑
-        // 例如：findNavController().navigate(HomeFragmentDirections.actionHomeToDetail(property))
-        Toast.makeText(context, "Clicked: ${property.listingTitle}", Toast.LENGTH_SHORT).show()
+        android.util.Log.d("HomeFragment", "Property clicked: ID=${property.id}, Title=${property.listingTitle}")
+        
+        // 跳转到房源详情页面
+        try {
+            val bundle = Bundle().apply {
+                putLong("property_id", property.id)
+            }
+            findNavController().navigate(R.id.action_home_to_detail, bundle)
+        } catch (e: Exception) {
+            android.util.Log.e("HomeFragment", "Navigation failed", e)
+            Toast.makeText(context, "Failed to open property details", Toast.LENGTH_SHORT).show()
+        }
     }
 }

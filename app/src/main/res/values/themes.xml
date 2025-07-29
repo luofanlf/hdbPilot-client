@@ -1,8 +1,41 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.HdbPilot_client" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- 主色调 -->
+        <item name="colorPrimary">@color/orange_primary</item>
+        <item name="colorPrimaryVariant">@color/orange_primary_dark</item>
+        <item name="colorOnPrimary">@color/text_on_primary</item>
+        
+        <!-- 次要色调 -->
+        <item name="colorSecondary">@color/orange_accent</item>
+        <item name="colorSecondaryVariant">@color/orange_light</item>
+        <item name="colorOnSecondary">@color/text_on_primary</item>
+        
+        <!-- 背景色 -->
+        <item name="android:colorBackground">@color/background_primary</item>
+        <item name="colorSurface">@color/background_secondary</item>
+        <item name="colorOnBackground">@color/text_primary</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        
+        <!-- 错误色 -->
+        <item name="colorError">@color/error_red</item>
+        <item name="colorOnError">@color/text_on_primary</item>
+        
+        <!-- 文字颜色 -->
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:textColorHint">@color/text_hint</item>
+        
+        <!-- 控件颜色 -->
+        <item name="colorControlNormal">@color/gray_400</item>
+        <item name="colorControlActivated">@color/orange_primary</item>
+        <item name="colorControlHighlight">@color/orange_light</item>
+        
+        <!-- 状态栏和导航栏 -->
+        <item name="android:statusBarColor">@color/background_secondary</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
+        <item name="android:navigationBarColor">@color/background_secondary</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o">true</item>
     </style>
 
     <style name="Theme.HdbPilot_client" parent="Base.Theme.HdbPilot_client" />
@@ -14,6 +47,29 @@
         <item name="boxCornerRadiusBottomStart">24dp</item>
         <item name="boxCornerRadiusBottomEnd">24dp</item>
         <item name="boxStrokeWidth">1dp</item>
-        <item name="startIconTint">?attr/colorOnSurfaceVariant</item>
+        <item name="boxStrokeColor">@color/gray_300</item>
+        <item name="startIconTint">@color/gray_500</item>
+        <item name="hintTextColor">@color/text_hint</item>
+    </style>
+    
+    <!-- 卡片样式 -->
+    <style name="CardStyle" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardBackgroundColor">@color/background_card</item>
+        <item name="cardCornerRadius">12dp</item>
+        <item name="cardElevation">2dp</item>
+    </style>
+    
+    <!-- 按钮样式 -->
+    <style name="PrimaryButtonStyle" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/orange_primary</item>
+        <item name="android:textColor">@color/text_on_primary</item>
+        <item name="cornerRadius">8dp</item>
+    </style>
+    
+    <!-- 次要按钮样式 -->
+    <style name="SecondaryButtonStyle" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/orange_primary</item>
+        <item name="android:textColor">@color/orange_primary</item>
+        <item name="cornerRadius">8dp</item>
     </style>
 </resources>

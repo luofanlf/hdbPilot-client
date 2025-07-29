@@ -1,7 +1,40 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.HdbPilot_client" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <!-- 主色调 -->
+        <item name="colorPrimary">@color/orange_primary</item>
+        <item name="colorPrimaryVariant">@color/orange_primary_dark</item>
+        <item name="colorOnPrimary">@color/text_on_primary</item>
+        
+        <!-- 次要色调 -->
+        <item name="colorSecondary">@color/orange_accent</item>
+        <item name="colorSecondaryVariant">@color/orange_light</item>
+        <item name="colorOnSecondary">@color/text_on_primary</item>
+        
+        <!-- 夜间模式背景色 -->
+        <item name="android:colorBackground">#121212</item>
+        <item name="colorSurface">#1F1F1F</item>
+        <item name="colorOnBackground">#E0E0E0</item>
+        <item name="colorOnSurface">#E0E0E0</item>
+        
+        <!-- 错误色 -->
+        <item name="colorError">@color/error_red</item>
+        <item name="colorOnError">@color/text_on_primary</item>
+        
+        <!-- 夜间模式文字颜色 -->
+        <item name="android:textColorPrimary">#E0E0E0</item>
+        <item name="android:textColorSecondary">#AAAAAA</item>
+        <item name="android:textColorHint">#666666</item>
+        
+        <!-- 控件颜色 -->
+        <item name="colorControlNormal">#666666</item>
+        <item name="colorControlActivated">@color/orange_primary</item>
+        <item name="colorControlHighlight">@color/orange_light</item>
+        
+        <!-- 状态栏和导航栏 -->
+        <item name="android:statusBarColor">#1F1F1F</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+        <item name="android:navigationBarColor">#1F1F1F</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o">false</item>
     </style>
 </resources>

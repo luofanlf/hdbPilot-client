@@ -7,22 +7,31 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background_primary"
     tools:context=".MainActivity">
 
     <!-- 1. 顶部应用栏容器 -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
+        android:background="@color/background_secondary"
+        android:theme="@style/ThemeOverlay.Material3.Light">
+
+        <!-- Material Design 风格的工具栏 -->
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/topAppBar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@drawable/ic_logo" />
+            android:background="@color/background_secondary"
+            app:title="HDBPILOT"
+            app:titleTextColor="@color/text_primary"
+            app:navigationIcon="@drawable/ic_logo"
+            app:navigationIconTint="@color/orange_primary" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
     <!-- 2. 中间可变内容区：Fragment 容器 -->
+    <!-- NavHostFragment 是 Navigation Component 的核心，用于承载和切换 Fragment -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/nav_host_fragment"
         android:name="androidx.navigation.fragment.NavHostFragment"
@@ -39,7 +48,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="?android:attr/windowBackground"
-        app:menu="@menu/bottom_nav_menu" /> <!-- 指向下面的菜单文件 -->
+        android:background="@color/background_secondary"
+        android:elevation="8dp"
+        app:menu="@menu/bottom_nav_menu"
+        app:itemIconTint="@color/bottom_nav_color"
+        app:itemTextColor="@color/bottom_nav_color"
+        app:itemRippleColor="@color/orange_light" /> <!-- 指向下面的菜单文件 -->
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
