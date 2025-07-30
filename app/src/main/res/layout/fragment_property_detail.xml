@@ -11,7 +11,6 @@
         android:layout_height="wrap_content"
         android:paddingBottom="20dp">
 
-        <!-- 房源图片 -->
         <ImageView
             android:id="@+id/propertyImageView"
             android:layout_width="match_parent"
@@ -23,7 +22,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- 房源标题 -->
         <TextView
             android:id="@+id/titleText"
             android:layout_width="0dp"
@@ -37,7 +35,6 @@
             app:layout_constraintTop_toBottomOf="@id/propertyImageView"
             tools:text="3-Room HDB Flat - Near MRT Station" />
 
-        <!-- 地址 -->
         <TextView
             android:id="@+id/addressText"
             android:layout_width="0dp"
@@ -53,7 +50,6 @@
             app:layout_constraintTop_toBottomOf="@id/titleText"
             tools:text="123 Tampines Street 12, Tampines 123456" />
 
-        <!-- 价格卡片 -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/priceCard"
             android:layout_width="0dp"
@@ -92,7 +88,8 @@
                         android:textColor="@color/text_primary"
                         android:textSize="20sp"
                         android:textStyle="bold"
-                        tools:text="$450,000" />
+                        tools:text="$450,000"
+                        android:layout_marginTop="18dp"/>
 
                 </LinearLayout>
 
@@ -109,14 +106,16 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
 
-                    <TextView
-                        android:id="@+id/forecastPriceText"
+
+
+                    <Button
+                        android:id="@+id/btnGoToPrediction"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/text_primary"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        tools:text="$480,000" />
+                        android:layout_marginTop="8dp"
+                        android:text="Prediction"
+                        android:textSize="12sp"
+                        />
 
                 </LinearLayout>
 
@@ -124,7 +123,6 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 房源基本信息 -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/basicInfoCard"
             android:layout_width="0dp"
@@ -144,7 +142,6 @@
                 android:columnCount="2"
                 android:padding="16dp">
 
-                <!-- 卧室数量 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -172,7 +169,6 @@
 
                 </LinearLayout>
 
-                <!-- 浴室数量 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -200,7 +196,6 @@
 
                 </LinearLayout>
 
-                <!-- 面积 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -228,7 +223,6 @@
 
                 </LinearLayout>
 
-                <!-- 楼层 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -260,7 +254,6 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 详细信息 -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/detailsCard"
             android:layout_width="0dp"
@@ -288,7 +281,6 @@
                     android:textStyle="bold"
                     android:textColor="@color/text_primary" />
 
-                <!-- 公寓模型 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -312,7 +304,6 @@
 
                 </LinearLayout>
 
-                <!-- 建筑年份 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -336,7 +327,6 @@
 
                 </LinearLayout>
 
-                <!-- 状态 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -360,7 +350,6 @@
 
                 </LinearLayout>
 
-                <!-- 卖家ID -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -388,7 +377,6 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 加载状态 -->
         <ProgressBar
             android:id="@+id/loadingProgressBar"
             android:layout_width="wrap_content"
@@ -400,7 +388,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/propertyImageView" />
 
-        <!-- 错误状态 -->
         <TextView
             android:id="@+id/errorText"
             android:layout_width="wrap_content"
