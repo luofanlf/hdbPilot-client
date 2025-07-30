@@ -1,17 +1,20 @@
 package com.iss.ui.detail
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.iss.R
-import com.iss.model.Property
+import com.iss.model.Property // Assuming your Property model is here
 import com.iss.repository.PropertyRepository
+import com.iss.PredActivity // Make sure to import PredActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -33,9 +36,12 @@ class PropertyDetailFragment : Fragment() {
     private lateinit var sellerIdText: TextView
     private lateinit var loadingProgressBar: ProgressBar
     private lateinit var errorText: TextView
+    private lateinit var btnGoToPrediction: Button
 
     private val propertyRepository = PropertyRepository()
     private var propertyId: Long = -1
+
+    private var loadedProperty: Property? = null // New: To store the loaded property object
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,11 +60,10 @@ class PropertyDetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
-        // 初始化视图
+
         initViews(view)
-        
-        // 加载数据
+        setupGoToPredictionButton() // Set up button listener after views are initialized
+
         if (propertyId != -1L) {
             loadPropertyDetail(propertyId)
         } else {
@@ -71,7 +76,6 @@ class PropertyDetailFragment : Fragment() {
         addressText = view.findViewById(R.id.addressText)
         propertyImageView = view.findViewById(R.id.propertyImageView)
         resalePriceText = view.findViewById(R.id.resalePriceText)
-        forecastPriceText = view.findViewById(R.id.forecastPriceText)
         bedroomText = view.findViewById(R.id.bedroomText)
         bathroomText = view.findViewById(R.id.bathroomText)
         areaText = view.findViewById(R.id.areaText)
@@ -82,6 +86,29 @@ class PropertyDetailFragment : Fragment() {
         sellerIdText = view.findViewById(R.id.sellerIdText)
         loadingProgressBar = view.findViewById(R.id.loadingProgressBar)
         errorText = view.findViewById(R.id.errorText)
+        btnGoToPrediction = view.findViewById(R.id.btnGoToPrediction)
+    }
+
+    private fun setupGoToPredictionButton() {
+        btnGoToPrediction.setOnClickListener {
+            loadedProperty?.let { property ->
+                val intent = Intent(requireContext(), PredActivity::class.java).apply {
+                    // Pass all relevant property data as extras
+                    putExtra("PROPERTY_FLOOR_AREA_SQM", property.floorAreaSqm) // Assuming Float
+                    putExtra("PROPERTY_TOWN", property.town) // Assuming String
+                    putExtra("PROPERTY_FLAT_TYPE", property.flatType) // Assuming String
+                    putExtra("PROPERTY_FLAT_MODEL", property.flatModel) // Assuming String
+                    putExtra("PROPERTY_STOREY_RANGE", property.storeyRange) // Assuming String, e.g., "07 TO 09"
+                    putExtra("PROPERTY_REMAINING_LEASE", property.remainingLease) // Assuming String, e.g., "75 years 00 months"
+                    putExtra("PROPERTY_MONTH", property.month) // Assuming String, e.g., "2019-06"
+                    putExtra("PROPERTY_LEASE_COMMENCE_DATE", property.leaseCommenceDate) // Assuming Int
+                    // You might need to adjust field names based on your 'Property' data class structure
+                }
+                startActivity(intent)
+            } ?: run {
+                Toast.makeText(requireContext(), "Property data not loaded yet.", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun loadPropertyDetail(id: Long) {
@@ -92,6 +119,7 @@ class PropertyDetailFragment : Fragment() {
                 result.fold(
                     onSuccess = { property ->
                         android.util.Log.d("PropertyDetailFragment", "Property loaded: ${property.listingTitle}")
+                        loadedProperty = property // Store the loaded property
                         showLoading(false)
                         displayPropertyDetail(property)
                     },
@@ -123,13 +151,11 @@ class PropertyDetailFragment : Fragment() {
         statusText.text = property.status
         sellerIdText.text = property.sellerId.toString()
 
-        // 显示所有详情卡片
         hideError()
     }
 
     private fun showLoading(show: Boolean) {
         loadingProgressBar.visibility = if (show) View.VISIBLE else View.GONE
-        // 隐藏其他视图
         if (show) {
             hideError()
         }
@@ -157,4 +183,4 @@ class PropertyDetailFragment : Fragment() {
                 }
             }
     }
-} 
+}

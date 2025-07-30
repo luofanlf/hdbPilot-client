@@ -1,4 +1,4 @@
-package com.iss
+package com.iss // Replace with your actual package name
 
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
@@ -27,6 +27,7 @@ import java.util.Arrays
 import java.util.Collections
 import kotlin.math.exp
 import kotlin.math.max
+
 
 class PredActivity : AppCompatActivity() {
 
@@ -81,14 +82,37 @@ class PredActivity : AppCompatActivity() {
         btnPredict = findViewById(R.id.btnPredict)
         tvResult = findViewById(R.id.tvResult)
 
-        etFloorArea.setText("95.0")
-        etTown.setText("TAMPINES")
-        etFlatType.setText("4 ROOM")
-        etFlatModel.setText("IMPROVED")
-        etStoreyRange.setText("07 TO 09")
-        etRemainingLease.setText("75 years 00 months")
-        etMonth.setText("2019-06")
-        etLeaseCommenceDate.setText("1990")
+        // New: Check for incoming property data from Intent
+        val incomingFloorArea = intent.getFloatExtra("PROPERTY_FLOOR_AREA_SQM", -1.0f)
+        val incomingTown = intent.getStringExtra("PROPERTY_TOWN")
+        val incomingFlatType = intent.getStringExtra("PROPERTY_FLAT_TYPE")
+        val incomingFlatModel = intent.getStringExtra("PROPERTY_FLAT_MODEL")
+        val incomingStoreyRange = intent.getStringExtra("PROPERTY_STOREY_RANGE")
+        val incomingRemainingLease = intent.getStringExtra("PROPERTY_REMAINING_LEASE")
+        val incomingMonth = intent.getStringExtra("PROPERTY_MONTH")
+        val incomingLeaseCommenceDate = intent.getIntExtra("PROPERTY_LEASE_COMMENCE_DATE", -1)
+
+        // Populate EditTexts with incoming data or default test data
+        if (incomingFloorArea != -1.0f && incomingTown != null) { // Check if valid property data is passed (using floorArea and town as indicators)
+            etFloorArea.setText(incomingFloorArea.toString())
+            etTown.setText(incomingTown)
+            etFlatType.setText(incomingFlatType)
+            etFlatModel.setText(incomingFlatModel)
+            etStoreyRange.setText(incomingStoreyRange)
+            etRemainingLease.setText(incomingRemainingLease)
+            etMonth.setText(incomingMonth)
+            etLeaseCommenceDate.setText(incomingLeaseCommenceDate.toString())
+        } else {
+            // Set default test input if no incoming data (e.g., if PredActivity is launched directly)
+            etFloorArea.setText("95.0")
+            etTown.setText("TAMPINES")
+            etFlatType.setText("4 ROOM")
+            etFlatModel.setText("IMPROVED")
+            etStoreyRange.setText("07 TO 09")
+            etRemainingLease.setText("75 years 00 months")
+            etMonth.setText("2019-06")
+            etLeaseCommenceDate.setText("1990")
+        }
 
         GlobalScope.launch(Dispatchers.IO) {
             Log.d("ONNXRT_DEBUG", "Starting asynchronous ONNX model loading...")
