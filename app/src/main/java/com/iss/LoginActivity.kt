@@ -26,6 +26,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var tilPassword: TextInputLayout
     private lateinit var btnLogin: Button
     private lateinit var tvError: TextView
+    private lateinit var tvSignUpLink: TextView // Declare the TextView for Sign Up link
 
     private val authApi by lazy { NetworkService.authApi }
 
@@ -39,9 +40,16 @@ class LoginActivity : AppCompatActivity() {
         tilPassword = findViewById(R.id.tilPassword)
         btnLogin = findViewById(R.id.btnLogin)
         tvError = findViewById(R.id.tvError)
+        tvSignUpLink = findViewById(R.id.tvSignUpLink) // Initialize the TextView
 
         btnLogin.setOnClickListener {
             performLogin()
+        }
+
+        // Set up click listener for the Sign Up link
+        tvSignUpLink.setOnClickListener {
+            val intent = Intent(this, RegisterActivity::class.java) // Navigate to RegisterActivity
+            startActivity(intent)
         }
     }
 
@@ -62,13 +70,10 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
-        // --- WARNING: DO NOT LOG SENSITIVE INFORMATION IN PRODUCTION ---
-        // These logs are for debugging purposes only.
-        // Remove them before deploying your app to users.
+        // WARNING: DO NOT LOG SENSITIVE INFORMATION IN PRODUCTION
         Log.d("LOGIN_DEBUG", "Attempting login with:")
         Log.d("LOGIN_DEBUG", "  Username: $username")
         Log.d("LOGIN_DEBUG", "  Password: $password (FOR DEBUGGING ONLY - REMOVE IN PRODUCTION)")
-        // --- END OF WARNING ---
 
         CoroutineScope(Dispatchers.IO).launch {
             try {

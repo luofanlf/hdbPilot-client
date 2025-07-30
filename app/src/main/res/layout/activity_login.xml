@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="24dp"
-    tools:context=".ui.login.LoginFragment">
+    tools:context=".LoginActivity">
 
     <TextView
         android:id="@+id/tvLoginTitle"
@@ -55,25 +55,25 @@
         app:layout_constraintTop_toBottomOf="@+id/tilEmail"
         android:layout_marginBottom="24dp">
 
-    <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/etPassword"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:inputType="textPassword" />
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnLogin"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:text="Login"
-    android:paddingVertical="12dp"
-    app:layout_constraintBottom_toTopOf="@+id/tvError"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@+id/tilPassword"
-    android:layout_marginBottom="16dp"/>
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Login"
+        android:paddingVertical="12dp"
+        app:layout_constraintBottom_toTopOf="@+id/tvError"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tilPassword"
+        android:layout_marginBottom="16dp"/>
 
     <TextView
         android:id="@+id/tvError"
@@ -87,6 +87,18 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnLogin"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        app:layout_constraintBottom_toTopOf="@+id/tvSignUpLink"/> <TextView
+    android:id="@+id/tvSignUpLink"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="16dp"
+    android:text="Don't have an account? Sign Up"
+    android:textColor="?attr/colorPrimary"
+    android:textSize="16sp"
+    android:textStyle="bold"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/tvError"
+    app:layout_constraintBottom_toBottomOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
