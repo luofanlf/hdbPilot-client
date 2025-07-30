@@ -19,7 +19,30 @@
         android:id="@+id/myActivitiesFragment"
         android:name="com.iss.ui.activities.MyActivitiesFragment"
         android:label="fragment_my_activities"
-        tools:layout="@layout/fragment_my_activities" />
+        tools:layout="@layout/fragment_my_activities">
+        <action
+            android:id="@+id/action_myActivitiesFragment_to_addPropertyFragment"
+            app:destination="@id/addPropertyFragment" />
+        <action
+            android:id="@+id/action_myActivitiesFragment_to_myListingsFragment"
+            app:destination="@id/myListingsFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/addPropertyFragment"
+        android:name="com.iss.ui.fragments.AddPropertyFragment"
+        android:label="Add Property"
+        tools:layout="@layout/fragment_add_property" />
+    
+    <fragment
+        android:id="@+id/myListingsFragment"
+        android:name="com.iss.ui.fragments.MyListingsFragment"
+        android:label="My Listings"
+        tools:layout="@layout/fragment_my_listings">
+        <action
+            android:id="@+id/action_myListingsFragment_to_propertyDetailFragment"
+            app:destination="@id/propertyDetailFragment" />
+    </fragment>
     
     <fragment
         android:id="@+id/moreFragment"
@@ -32,6 +55,19 @@
         android:name="com.iss.ui.detail.PropertyDetailFragment"
         android:label="Property Details"
         tools:layout="@layout/fragment_property_detail">
+        <argument
+            android:name="property_id"
+            app:argType="long" />
+        <action
+            android:id="@+id/action_propertyDetailFragment_to_editPropertyFragment"
+            app:destination="@id/editPropertyFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/editPropertyFragment"
+        android:name="com.iss.ui.fragments.EditPropertyFragment"
+        android:label="Edit Property"
+        tools:layout="@layout/fragment_edit_property">
         <argument
             android:name="property_id"
             app:argType="long" />

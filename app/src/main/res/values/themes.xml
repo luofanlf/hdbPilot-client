@@ -68,8 +68,27 @@
     
     <!-- 次要按钮样式 -->
     <style name="SecondaryButtonStyle" parent="Widget.Material3.Button.OutlinedButton">
-        <item name="strokeColor">@color/primary</item>
-        <item name="android:textColor">@color/primary</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="strokeColor">@color/text_secondary</item>
+        <item name="android:backgroundTint">@android:color/transparent</item>
+    </style>
+
+    <!-- 下拉框样式 -->
+    <style name="SpinnerStyle" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="strokeColor">@color/text_secondary</item>
+        <item name="android:backgroundTint">@color/background_card</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="android:minHeight">56dp</item>
+    </style>
+
+    <!-- 删除按钮样式 -->
+    <style name="DeleteButtonStyle" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textColor">@color/error</item>
+        <item name="strokeColor">@color/error</item>
+        <item name="android:backgroundTint">@android:color/transparent</item>
         <item name="cornerRadius">8dp</item>
     </style>
 </resources>
