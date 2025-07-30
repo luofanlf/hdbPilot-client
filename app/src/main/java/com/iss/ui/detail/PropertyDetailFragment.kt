@@ -76,6 +76,7 @@ class PropertyDetailFragment : Fragment() {
         addressText = view.findViewById(R.id.addressText)
         propertyImageView = view.findViewById(R.id.propertyImageView)
         resalePriceText = view.findViewById(R.id.resalePriceText)
+
         bedroomText = view.findViewById(R.id.bedroomText)
         bathroomText = view.findViewById(R.id.bathroomText)
         areaText = view.findViewById(R.id.areaText)
@@ -141,7 +142,6 @@ class PropertyDetailFragment : Fragment() {
         titleText.text = property.listingTitle
         addressText.text = property.fullAddress
         resalePriceText.text = property.formattedResalePrice
-        forecastPriceText.text = property.formattedForecastPrice
         bedroomText.text = "${property.bedroomNumber} Bedroom${if (property.bedroomNumber > 1) "s" else ""}"
         bathroomText.text = "${property.bathroomNumber} Bathroom${if (property.bathroomNumber > 1) "s" else ""}"
         areaText.text = property.formattedArea

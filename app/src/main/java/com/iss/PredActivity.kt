@@ -1,11 +1,14 @@
-package com.iss // Replace with your actual package name
+package com.iss
 
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
+import android.app.DatePickerDialog
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -24,6 +27,7 @@ import java.nio.FloatBuffer
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Arrays
+import java.util.Calendar
 import java.util.Collections
 import kotlin.math.exp
 import kotlin.math.max
@@ -32,13 +36,13 @@ import kotlin.math.max
 class PredActivity : AppCompatActivity() {
 
     private lateinit var etFloorArea: EditText
-    private lateinit var etTown: EditText
-    private lateinit var etFlatType: EditText
-    private lateinit var etFlatModel: EditText
-    private lateinit var etStoreyRange: EditText
+    private lateinit var spinnerTown: AutoCompleteTextView
+    private lateinit var spinnerFlatType: AutoCompleteTextView
+    private lateinit var spinnerFlatModel: AutoCompleteTextView
+    private lateinit var spinnerStoreyRange: AutoCompleteTextView
     private lateinit var etRemainingLease: EditText
     private lateinit var etMonth: EditText
-    private lateinit var etLeaseCommenceDate: EditText
+    private lateinit var etLeaseCommenceDate: EditText // This will now be a regular EditText
     private lateinit var btnPredict: Button
     private lateinit var tvResult: TextView
 
@@ -72,17 +76,27 @@ class PredActivity : AppCompatActivity() {
         setContentView(R.layout.pred_test)
 
         etFloorArea = findViewById(R.id.etFloorArea)
-        etTown = findViewById(R.id.etTown)
-        etFlatType = findViewById(R.id.etFlatType)
-        etFlatModel = findViewById(R.id.etFlatModel)
-        etStoreyRange = findViewById(R.id.etStoreyRange)
+        spinnerTown = findViewById(R.id.spinnerTown)
+        spinnerFlatType = findViewById(R.id.spinnerFlatType)
+        spinnerFlatModel = findViewById(R.id.spinnerFlatModel)
+        spinnerStoreyRange = findViewById(R.id.spinnerStoreyRange)
         etRemainingLease = findViewById(R.id.etRemainingLease)
         etMonth = findViewById(R.id.etMonth)
-        etLeaseCommenceDate = findViewById(R.id.etLeaseCommenceDate)
+        etLeaseCommenceDate = findViewById(R.id.etLeaseCommenceDate) // No longer a date picker target
         btnPredict = findViewById(R.id.btnPredict)
         tvResult = findViewById(R.id.tvResult)
 
-        // New: Check for incoming property data from Intent
+        // Setup Spinners with ArrayAdapter
+        setupSpinner(spinnerTown, R.array.town_options)
+        setupSpinner(spinnerFlatType, R.array.flat_type_options)
+        setupSpinner(spinnerFlatModel, R.array.flat_model_options)
+        setupSpinner(spinnerStoreyRange, R.array.storey_range_options)
+
+        // Setup Date Picker for Month input only
+        setupMonthDatePicker()
+        // Removed setupLeaseCommenceDatePicker() call
+
+        // Check for incoming property data from Intent
         val incomingFloorArea = intent.getFloatExtra("PROPERTY_FLOOR_AREA_SQM", -1.0f)
         val incomingTown = intent.getStringExtra("PROPERTY_TOWN")
         val incomingFlatType = intent.getStringExtra("PROPERTY_FLAT_TYPE")
@@ -92,26 +106,26 @@ class PredActivity : AppCompatActivity() {
         val incomingMonth = intent.getStringExtra("PROPERTY_MONTH")
         val incomingLeaseCommenceDate = intent.getIntExtra("PROPERTY_LEASE_COMMENCE_DATE", -1)
 
-        // Populate EditTexts with incoming data or default test data
-        if (incomingFloorArea != -1.0f && incomingTown != null) { // Check if valid property data is passed (using floorArea and town as indicators)
+        // Populate EditTexts/Spinners with incoming data or default test data
+        if (incomingFloorArea != -1.0f && incomingTown != null) {
             etFloorArea.setText(incomingFloorArea.toString())
-            etTown.setText(incomingTown)
-            etFlatType.setText(incomingFlatType)
-            etFlatModel.setText(incomingFlatModel)
-            etStoreyRange.setText(incomingStoreyRange)
+            setSpinnerSelection(spinnerTown, incomingTown, R.array.town_options)
+            setSpinnerSelection(spinnerFlatType, incomingFlatType, R.array.flat_type_options)
+            setSpinnerSelection(spinnerFlatModel, incomingFlatModel, R.array.flat_model_options)
+            setSpinnerSelection(spinnerStoreyRange, incomingStoreyRange, R.array.storey_range_options)
             etRemainingLease.setText(incomingRemainingLease)
             etMonth.setText(incomingMonth)
-            etLeaseCommenceDate.setText(incomingLeaseCommenceDate.toString())
+            etLeaseCommenceDate.setText(incomingLeaseCommenceDate.toString()) // Set as regular text
         } else {
-            // Set default test input if no incoming data (e.g., if PredActivity is launched directly)
+            // Set default test input if no incoming data
             etFloorArea.setText("95.0")
-            etTown.setText("TAMPINES")
-            etFlatType.setText("4 ROOM")
-            etFlatModel.setText("IMPROVED")
-            etStoreyRange.setText("07 TO 09")
+            setSpinnerSelection(spinnerTown, "TAMPINES", R.array.town_options)
+            setSpinnerSelection(spinnerFlatType, "4 ROOM", R.array.flat_type_options)
+            setSpinnerSelection(spinnerFlatModel, "IMPROVED", R.array.flat_model_options)
+            setSpinnerSelection(spinnerStoreyRange, "07 TO 09", R.array.storey_range_options)
             etRemainingLease.setText("75 years 00 months")
             etMonth.setText("2019-06")
-            etLeaseCommenceDate.setText("1990")
+            etLeaseCommenceDate.setText("1990") // Set as regular text
         }
 
         GlobalScope.launch(Dispatchers.IO) {
@@ -143,6 +157,57 @@ class PredActivity : AppCompatActivity() {
         }
     }
 
+    // Helper function to setup AutoCompleteTextView as a dropdown
+    private fun setupSpinner(spinner: AutoCompleteTextView, arrayResId: Int) {
+        val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, resources.getStringArray(arrayResId))
+        spinner.setAdapter(adapter)
+        spinner.keyListener = null
+        spinner.setOnTouchListener { v, event ->
+            if (event.action == android.view.MotionEvent.ACTION_UP) {
+                spinner.showDropDown()
+            }
+            false
+        }
+    }
+
+    // Helper function to set selection for AutoCompleteTextView dropdown
+    private fun setSpinnerSelection(spinner: AutoCompleteTextView, value: String?, arrayResId: Int) {
+        if (value == null) return
+        val array = resources.getStringArray(arrayResId)
+        val index = array.indexOf(value)
+        if (index != -1) {
+            spinner.setText(array[index], false)
+        } else {
+            spinner.setText(value, false)
+            Log.w("ONNXRT_DEBUG", "Value '$value' not found in spinner options for ${resources.getResourceEntryName(arrayResId)}")
+        }
+    }
+
+    // Setup DatePickerDialog for Month input only
+    private fun setupMonthDatePicker() {
+        etMonth.setOnClickListener {
+            val calendar = Calendar.getInstance()
+            val currentYear = calendar.get(Calendar.YEAR)
+            val currentMonth = calendar.get(Calendar.MONTH)
+
+            val datePickerDialog = DatePickerDialog(
+                this,
+                { _, year, monthOfYear, _ ->
+                    val selectedMonth = monthOfYear + 1
+                    val formattedMonth = String.format("%d-%02d", year, selectedMonth)
+                    etMonth.setText(formattedMonth)
+                },
+                currentYear,
+                currentMonth,
+                1
+            )
+            datePickerDialog.show()
+        }
+    }
+
+    // Removed setupLeaseCommenceDatePicker() function as it's no longer a DatePicker
+
+
     private fun performPrediction() {
         Log.d("ONNXRT_DEBUG", "performPrediction started.")
         if (ortSession == null) {
@@ -152,13 +217,13 @@ class PredActivity : AppCompatActivity() {
         }
 
         val floorAreaStr = etFloorArea.text.toString()
-        val town = etTown.text.toString().trim().uppercase()
-        val flatType = etFlatType.text.toString().trim().uppercase()
-        val flatModel = etFlatModel.text.toString().trim().uppercase()
-        val storeyRange = etStoreyRange.text.toString().trim()
+        val town = spinnerTown.text.toString().trim().uppercase()
+        val flatType = spinnerFlatType.text.toString().trim().uppercase()
+        val flatModel = spinnerFlatModel.text.toString().trim().uppercase()
+        val storeyRange = spinnerStoreyRange.text.toString().trim().uppercase()
         val remainingLease = etRemainingLease.text.toString().trim()
         val month = etMonth.text.toString().trim()
-        val leaseCommenceDateStr = etLeaseCommenceDate.text.toString().trim()
+        val leaseCommenceDateStr = etLeaseCommenceDate.text.toString().trim() // Get from EditText
 
         if (floorAreaStr.isEmpty() || town.isEmpty() || flatType.isEmpty() || flatModel.isEmpty() ||
             storeyRange.isEmpty() || remainingLease.isEmpty() || month.isEmpty() || leaseCommenceDateStr.isEmpty()) {
@@ -440,7 +505,7 @@ class PredActivity : AppCompatActivity() {
             Log.d("ONNXRT_DEBUG", "ONNX Session and Environment closed.")
         } catch (e: Exception) {
             Log.e("ONNXRT", "Failed to close ONNX resources: ${e.message}", e)
-            Log.e("ONNXRT_DEBUG", "ONNX resource closing exception: ${e.message}")
+            Log.d("ONNXRT_DEBUG", "ONNX resource closing exception: ${e.message}")
         }
     }
 }
