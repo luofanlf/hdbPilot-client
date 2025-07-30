@@ -31,9 +31,9 @@
     <color name="gray_800">#424242</color>
     <color name="gray_900">#212121</color>
 
-    <!-- 状态颜色 - 改为灰度 -->
-    <color name="success">#616161</color>
-    <color name="error">#424242</color>
+    <!-- 状态颜色 -->
+    <color name="success">#FF4CAF50</color>
+    <color name="error">#FFE53935</color>
     <color name="warning">#757575</color>
 
     <!-- 分割线和边框 -->
@@ -43,4 +43,5 @@
     <!-- 基础颜色 -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="gray">@color/text_secondary</color>
 </resources>

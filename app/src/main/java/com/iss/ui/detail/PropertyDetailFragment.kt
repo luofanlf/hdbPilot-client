@@ -11,10 +11,13 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.iss.R
 import com.iss.model.Property // Assuming your Property model is here
 import com.iss.repository.PropertyRepository
 import com.iss.PredActivity // Make sure to import PredActivity
+import com.iss.api.PropertyApi
+import com.iss.network.NetworkService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -37,9 +40,13 @@ class PropertyDetailFragment : Fragment() {
     private lateinit var loadingProgressBar: ProgressBar
     private lateinit var errorText: TextView
     private lateinit var btnGoToPrediction: Button
+    private lateinit var btnEdit: Button
+    private lateinit var btnDelete: Button
 
     private val propertyRepository = PropertyRepository()
+    private lateinit var propertyApi: PropertyApi
     private var propertyId: Long = -1
+    private var isFromMyListings: Boolean = false // 标记是否来自My Listings
 
     private var loadedProperty: Property? = null // New: To store the loaded property object
 
@@ -47,6 +54,7 @@ class PropertyDetailFragment : Fragment() {
         super.onCreate(savedInstanceState)
         arguments?.let {
             propertyId = it.getLong(ARG_PROPERTY_ID, -1)
+            isFromMyListings = it.getBoolean(ARG_FROM_MY_LISTINGS, false)
         }
     }
 
@@ -63,6 +71,18 @@ class PropertyDetailFragment : Fragment() {
 
         initViews(view)
         setupGoToPredictionButton() // Set up button listener after views are initialized
+        
+        // 只有从My Listings进入时才设置编辑和删除按钮
+        if (isFromMyListings) {
+            setupActionButtons() // Set up edit and delete buttons
+        } else {
+            // 从Home页面进入时隐藏编辑和删除按钮
+            btnEdit.visibility = View.GONE
+            btnDelete.visibility = View.GONE
+        }
+
+        // 初始化API
+        propertyApi = NetworkService.propertyApi
 
         if (propertyId != -1L) {
             loadPropertyDetail(propertyId)
@@ -88,6 +108,8 @@ class PropertyDetailFragment : Fragment() {
         loadingProgressBar = view.findViewById(R.id.loadingProgressBar)
         errorText = view.findViewById(R.id.errorText)
         btnGoToPrediction = view.findViewById(R.id.btnGoToPrediction)
+        btnEdit = view.findViewById(R.id.btnEdit)
+        btnDelete = view.findViewById(R.id.btnDelete)
     }
 
     private fun setupGoToPredictionButton() {
@@ -108,6 +130,64 @@ class PropertyDetailFragment : Fragment() {
                 startActivity(intent)
             } ?: run {
                 Toast.makeText(requireContext(), "Property data not loaded yet.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun setupActionButtons() {
+        btnEdit.setOnClickListener {
+            loadedProperty?.let { property ->
+                navigateToEditProperty(property)
+            } ?: run {
+                Toast.makeText(requireContext(), "Property data not loaded yet.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        btnDelete.setOnClickListener {
+            loadedProperty?.let { property ->
+                showDeleteConfirmationDialog(property)
+            } ?: run {
+                Toast.makeText(requireContext(), "Property data not loaded yet.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun navigateToEditProperty(property: Property) {
+        try {
+            val bundle = Bundle().apply {
+                putLong("property_id", property.id)
+            }
+            findNavController().navigate(R.id.action_propertyDetailFragment_to_editPropertyFragment, bundle)
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Failed to open edit property", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showDeleteConfirmationDialog(property: Property) {
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Delete Property")
+            .setMessage("Are you sure you want to delete '${property.listingTitle}'? This action cannot be undone.")
+            .setPositiveButton("Delete") { _, _ ->
+                deleteProperty(property)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun deleteProperty(property: Property) {
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val response = propertyApi.deleteProperty(property.id)
+                
+                if (response.isSuccessful && response.body()?.data == true) {
+                    Toast.makeText(requireContext(), "Property deleted successfully", Toast.LENGTH_LONG).show()
+                    // 返回上一页
+                    requireActivity().onBackPressedDispatcher.onBackPressed()
+                } else {
+                    Toast.makeText(requireContext(), "Failed to delete property", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Network error: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -174,12 +254,14 @@ class PropertyDetailFragment : Fragment() {
 
     companion object {
         private const val ARG_PROPERTY_ID = "property_id"
+        private const val ARG_FROM_MY_LISTINGS = "from_my_listings"
 
         @JvmStatic
-        fun newInstance(propertyId: Long) =
+        fun newInstance(propertyId: Long, fromMyListings: Boolean = false) =
             PropertyDetailFragment().apply {
                 arguments = Bundle().apply {
                     putLong(ARG_PROPERTY_ID, propertyId)
+                    putBoolean(ARG_FROM_MY_LISTINGS, fromMyListings)
                 }
             }
     }
