@@ -51,23 +51,24 @@ class PredActivity : AppCompatActivity() {
 
     private val PRICE_RANGES = arrayOf(
         "<= $350,000",
-        "$350,001 - $500,000",
-        "$500,001 - $700,000",
-        "$700,001 - $1,000,000",
-        "> $1,000,000"
+        "$350,001 - $450,000",
+        "$450,001 - $550,000",
+        "$550,001 - $650,000",
+        "$650,001 - $750,000",
+        "$750,001 - $850,000",
+        "$850,001 - $950,000",
+        "> $950,000"
     )
 
-    private val SCALER_MEANS = floatArrayOf(
-        96.8740658027681f, 2020.2176078135776f, 29.45240004490562f, 8.673656439946754f, 74.294599230724f
-    )
-    private val SCALER_STDS = floatArrayOf(
-        24.057867459941118f, 2.9905908513913864f, 13.933463465912096f, 5.855236447166976f, 13.732032823995471f
-    )
+    private val SCALER_MEANS = floatArrayOf(96.8740658027681f, 2020.2176078135776f, 29.45240004490562f, 8.673656439946754f, 74.294599230724f)
+    // --- SCALER_STDS ---
+    private val SCALER_STDS = floatArrayOf(24.057867459941118f, 2.9905908513913864f, 13.933463465912096f, 5.855236447166976f, 13.732032823995471f)
 
+    // --- ONEHOT_CATEGORIES ---
     private val ONEHOT_CATEGORIES = listOf(
-        arrayOf("ANG MO KIO", "BEDOK", "BISHAN", "BUKIT BATOK", "BUKIT MERAH", "BUKIT PANJANG", "BUKIT TIMAH", "CENTRAL AREA", "CHOA CHU KANG", "CLEMENTI", "GEYLANG", "HOUGANG", "JURONG EAST", "JURONG WEST", "KALLANG/WHAMPOA", "MARINE PARADE", "PASIR RIS", "PUNGGOL", "QUEENSTOWN", "SEMBAWANG", "SENGKANG", "SERANGOON", "TAMPINES", "TOA PAYOH", "WOODLANDS", "YISHUN"),
-        arrayOf("1 ROOM", "2 ROOM", "3 ROOM", "4 ROOM", "5 ROOM", "EXECUTIVE", "MULTI-GENERATION"),
-        arrayOf("2-ROOM", "3GEN", "ADJOINED FLAT", "APARTMENT", "DBSS", "IMPROVED", "IMPROVED-MAISONETTE", "MAISONETTE", "MODEL A", "MODEL A-MAISONETTE", "MODEL A2", "MULTI GENERATION", "NEW GENERATION", "PREMIUM APARTMENT", "PREMIUM APARTMENT LOFT", "PREMIUM MAISONETTE", "SIMPLIFIED", "STANDARD", "TERRACE", "TYPE S1", "TYPE S2"),
+        arrayOf("ANG MO KIO", "BEDOK", "BISHAN", "BUKIT BATOK", "BUKIT MERAH", "BUKIT PANJANG", "BUKIT TIMAH", "CENTRAL AREA", "CHOA CHU KANG", "CLEMENTI", "GEYLANG", "HOUGANG", "JURONG EAST", "JURONG WEST", "KALLANG/WHAMPOA", "MARINE PARADE", "PASIR RIS", "PUNGGOL", "QUEENSTOWN", "SEMBAWANG", "SENGKANG", "SERANGOON", "TAMPINES", "TOA PAYOH", "WOODLANDS", "YISHUN"), // Category 0: town
+        arrayOf("1 ROOM", "2 ROOM", "3 ROOM", "4 ROOM", "5 ROOM", "EXECUTIVE", "MULTI-GENERATION"), // Category 1: flat_type
+        arrayOf("2-ROOM", "3GEN", "ADJOINED FLAT", "APARTMENT", "DBSS", "IMPROVED", "IMPROVED-MAISONETTE", "MAISONETTE", "MODEL A", "MODEL A-MAISONETTE", "MODEL A2", "MULTI GENERATION", "NEW GENERATION", "PREMIUM APARTMENT", "PREMIUM APARTMENT LOFT", "PREMIUM MAISONETTE", "SIMPLIFIED", "STANDARD", "TERRACE", "TYPE S1", "TYPE S2"), // Category 2: flat_model
     )
 
 
@@ -135,7 +136,7 @@ class PredActivity : AppCompatActivity() {
                 val sessionOptions = OrtSession.SessionOptions()
                 Log.d("ONNXRT_DEBUG", "OrtEnvironment created successfully.")
 
-                val modelPath = assetFilePath(applicationContext, "house_price_classifier.onnx")
+                val modelPath = assetFilePath(applicationContext, "123.onnx")
                 Log.d("ONNXRT_DEBUG", "Model file path: $modelPath")
 
                 ortSession = ortEnvironment?.createSession(modelPath, sessionOptions)
