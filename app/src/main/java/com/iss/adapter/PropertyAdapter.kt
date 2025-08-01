@@ -63,6 +63,15 @@ class PropertyAdapter(
         android.util.Log.d("PropertyAdapter", "notifyDataSetChanged called, itemCount: $itemCount")
     }
 
+    fun addProperties(newProperties: List<Property>) {
+        android.util.Log.d("PropertyAdapter", "addProperties called with ${newProperties.size} properties")
+        val oldSize = properties.size
+        allProperties = allProperties + newProperties
+        properties = allProperties
+        notifyItemRangeInserted(oldSize, newProperties.size)
+        android.util.Log.d("PropertyAdapter", "notifyItemRangeInserted called, oldSize: $oldSize, newSize: ${newProperties.size}, total: $itemCount")
+    }
+
     fun filterProperties(query: String) {
         val filteredList = if (query.isEmpty()) {
             allProperties

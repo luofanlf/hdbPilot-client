@@ -18,22 +18,23 @@ data class Property(
     val topYear: Int, // 现有字段，用于显示年份，但我们还需要 lease_commence_date
     val flatModel: String,
     val resalePrice: Float,
-    val forecastPrice: Float,
+    val forecastPrice: Float? = null, // 设为可选，因为后端可能不返回
     val status: String,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
     val imageUrl: String? = null,
+    val imageList: List<String>? = null, // 后端返回的imageList字段
 
     //for map
     @Transient
     var latLng: LatLng? = null,
 
     // --- 新增的用于预测模型的特征字段 ---
-    val flatType: String, // flat_type 字段
-    val storeyRange: String, // storey_range 字段 (您在XML中也使用了这个)
-    val remainingLease: String, // remaining_lease 字段
-    val month: String, // month 字段 (例如 "2019-06")
-    val leaseCommenceDate: Int // lease_commence_date 字段
+    val flatType: String? = null, // flat_type 字段，设为可选
+    val storeyRange: String? = null, // storey_range 字段，设为可选
+    val remainingLease: String? = null, // remaining_lease 字段，设为可选
+    val month: String? = null, // month 字段，设为可选
+    val leaseCommenceDate: Int? = null // lease_commence_date 字段，设为可选
     // --- 新增字段结束 ---
 ) {
     val fullAddress: String
@@ -43,7 +44,7 @@ data class Property(
         get() = "$${String.format("%,.0f", resalePrice)}"
 
     val formattedForecastPrice: String
-        get() = "$${String.format("%,.0f", forecastPrice)}"
+        get() = forecastPrice?.let { "$${String.format("%,.0f", it)}" } ?: "N/A"
 
     val formattedArea: String
         get() = "${floorAreaSqm.toInt()}㎡"

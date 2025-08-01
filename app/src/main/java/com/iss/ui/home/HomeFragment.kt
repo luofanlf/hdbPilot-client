@@ -23,17 +23,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment() {
-
-    private lateinit var searchEditText: TextInputEditText
     private lateinit var propertiesRecyclerView: RecyclerView
-    private lateinit var emptyStateText: TextView
+    private lateinit var searchEditText: TextInputEditText
     private lateinit var loadingProgressBar: ProgressBar
+    private lateinit var emptyStateText: TextView
     private lateinit var propertyAdapter: PropertyAdapter
     private val propertyRepository = PropertyRepository()
-    private var allProperties = listOf<Property>()
+
+    // Pagination variables
+    private var currentPage = 1
+    private var pageSize = 10
+    private var isLoading = false
+    private var hasMoreData = true
+    private var allProperties = mutableListOf<Property>()
 
     override fun onCreateView(
-        inflater: LayoutInflater, 
+        inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
@@ -42,40 +47,58 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
-        // 初始化视图
-        searchEditText = view.findViewById(R.id.searchEditText)
+
+        // Initialize views
         propertiesRecyclerView = view.findViewById(R.id.propertiesRecyclerView)
-        emptyStateText = view.findViewById(R.id.emptyStateText)
+        searchEditText = view.findViewById(R.id.searchEditText)
         loadingProgressBar = view.findViewById(R.id.loadingProgressBar)
-        
-        // 设置RecyclerView
+        emptyStateText = view.findViewById(R.id.emptyStateText)
+
+        // Setup RecyclerView
         setupRecyclerView()
 
-        // 加载数据
-        loadProperties()
+        // Setup search functionality
+        setupSearch()
+
+        // Load the first page of data
+        loadFirstPage()
     }
 
     private fun setupRecyclerView() {
         propertyAdapter = PropertyAdapter(emptyList()) { property ->
-            // 处理房源点击事件
             onPropertyClick(property)
         }
-        
+
         propertiesRecyclerView.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = propertyAdapter
-            // 确保滚动时内容不被遮挡
             isNestedScrollingEnabled = true
+
+            // Add scroll listener for pagination
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+
+                    // No need to proceed if scrolling up or data is already loading/no more data
+                    if (dy <= 0 || isLoading || !hasMoreData) return
+
+                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                    val totalItemCount = layoutManager.itemCount
+                    val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
+
+                    // Trigger load more when the user is near the end of the list
+                    if (lastVisibleItemPosition >= totalItemCount - 3) {
+                        loadNextPage()
+                    }
+                }
+            })
         }
     }
 
     private fun setupSearch() {
         searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            
             override fun afterTextChanged(s: Editable?) {
                 val query = s?.toString() ?: ""
                 propertyAdapter.filterProperties(query)
@@ -84,62 +107,92 @@ class HomeFragment : Fragment() {
         })
     }
 
+    private fun loadFirstPage() {
+        // Reset state for a fresh load (e.g., for pull-to-refresh)
+        currentPage = 1
+        hasMoreData = true
+        allProperties.clear()
+        propertyAdapter.updateProperties(emptyList()) // Clear adapter immediately
+        loadProperties()
+    }
+
+    private fun loadNextPage() {
+        if (isLoading || !hasMoreData) {
+            return
+        }
+        currentPage++
+        loadProperties()
+    }
+
     private fun loadProperties() {
-        showLoading(true)
+        // Prevent multiple simultaneous loads
+        if (isLoading) return
+
+        isLoading = true
+        // Only show the main progress bar for the first page
+        if (currentPage == 1) {
+            showLoading(true)
+        } else {
+            // For subsequent pages, you might want a smaller footer loading indicator
+            // For now, we just rely on the isLoading flag
+        }
+
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                val result = propertyRepository.getPropertyList()
+                val result = propertyRepository.getPropertyListPaged(currentPage, pageSize)
                 result.fold(
-                    onSuccess = { properties ->
-                        // 添加调试信息
-                        android.util.Log.d("HomeFragment", "API Success: Received ${properties.size} properties")
-                        allProperties = properties
-                        propertyAdapter.updateProperties(properties)
-                        showLoading(false)
+                    onSuccess = { pageResponse ->
+                        if (pageResponse.records.isNotEmpty()) {
+                            if (currentPage == 1) {
+                                allProperties.clear()
+                            }
+                            allProperties.addAll(pageResponse.records)
+                            propertyAdapter.updateProperties(allProperties)
+                        }
+
+                        hasMoreData = pageResponse.hasNext
                         updateEmptyState()
-                        // 添加成功提示
-                        Toast.makeText(context, "Successfully loaded ${properties.size} properties", Toast.LENGTH_SHORT).show()
                     },
                     onFailure = { exception ->
-                        android.util.Log.e("HomeFragment", "API Failure: ${exception.message}")
                         Toast.makeText(context, "Failed to load properties: ${exception.message}", Toast.LENGTH_LONG).show()
-                        showLoading(false)
+                        // If a page fails to load, decrement the page number to allow a retry
+                        if (currentPage > 1) {
+                            currentPage--
+                        }
                         updateEmptyState()
                     }
                 )
             } catch (e: Exception) {
-                android.util.Log.e("HomeFragment", "Exception in loadProperties", e)
                 Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-                showLoading(false)
+                if (currentPage > 1) {
+                    currentPage--
+                }
                 updateEmptyState()
+            } finally {
+                isLoading = false
+                showLoading(false)
             }
         }
     }
 
     private fun showLoading(show: Boolean) {
         loadingProgressBar.visibility = if (show) View.VISIBLE else View.GONE
-        propertiesRecyclerView.visibility = if (show) View.GONE else View.VISIBLE
+        if (currentPage == 1) {
+            propertiesRecyclerView.visibility = if (show) View.GONE else View.VISIBLE
+        }
     }
 
     private fun updateEmptyState() {
-        val itemCount = propertyAdapter.itemCount
-        android.util.Log.d("HomeFragment", "updateEmptyState: itemCount = $itemCount")
-        
-        if (itemCount == 0) {
-            android.util.Log.d("HomeFragment", "Showing empty state")
+        if (propertyAdapter.itemCount == 0 && !isLoading) {
             emptyStateText.visibility = View.VISIBLE
             propertiesRecyclerView.visibility = View.GONE
         } else {
-            android.util.Log.d("HomeFragment", "Showing RecyclerView with $itemCount items")
             emptyStateText.visibility = View.GONE
             propertiesRecyclerView.visibility = View.VISIBLE
         }
     }
 
     private fun onPropertyClick(property: Property) {
-        android.util.Log.d("HomeFragment", "Property clicked: ID=${property.id}, Title=${property.listingTitle}")
-        
-        // 跳转到房源详情页面
         try {
             val bundle = Bundle().apply {
                 putLong("property_id", property.id)
@@ -150,4 +203,6 @@ class HomeFragment : Fragment() {
             Toast.makeText(context, "Failed to open property details", Toast.LENGTH_SHORT).show()
         }
     }
+
+    // The onResume method has been removed as it was causing the issue.
 }
