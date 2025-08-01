@@ -2,7 +2,8 @@
     xmlns:map="http://schemas.android.com/apk/res-auto"
     android:id="@+id/mapContainer"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:paddingBottom="48dp">
 
     <com.google.android.gms.maps.MapView
         android:id="@+id/mapView"
@@ -43,6 +44,7 @@
         android:layout_height="48dp"
         android:layout_gravity="start|bottom"
         android:layout_margin="16dp"
+        android:layout_marginBottom="64dp"
         android:background="@drawable/zoom_button_bg"
         android:src="@drawable/ic_location"
         android:contentDescription="@string/my_location_desc" />

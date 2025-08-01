@@ -56,7 +56,9 @@ dependencies {
     //map
     implementation("com.google.android.gms:play-services-maps:18.1.0")
     implementation("com.google.maps.android:android-maps-utils:3.8.0")
-    implementation("androidx.fragment:fragment-ktx:1.6.2") 
+    implementation("androidx.fragment:fragment-ktx:1.6.2")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
 
 
     // 网络请求相关

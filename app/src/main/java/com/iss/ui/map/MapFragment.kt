@@ -1,6 +1,7 @@
 package com.iss.ui.map
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Address
@@ -16,6 +17,7 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -70,6 +72,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
         view.findViewById<ImageButton>(R.id.myLocationButton).setOnClickListener {
             enableMyLocation()
+            moveToMyLocation()
         }
 
         return view
@@ -77,6 +80,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+        googleMap.uiSettings.isMyLocationButtonEnabled = false
         enableMyLocation()
         setupCluster()
         loadPropertyMarkers()
@@ -197,6 +201,37 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             }
         }
     }
+    @SuppressLint("MissingPermission")
+    private fun moveToMyLocation() {
+        if (::googleMap.isInitialized) {
+            val locationProvider = LocationServices.getFusedLocationProviderClient(requireActivity())
+            locationProvider.lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    val latLng = LatLng(location.latitude, location.longitude)
+                    Log.d("MapFragment", "Moving to current location: $latLng")
+                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+                } else {
+                    Log.w("MapFragment", "Location is null, fallback to Singapore")
+                    val fallbackLatLng = LatLng(1.3521, 103.8198) // Singapore
+                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(fallbackLatLng, 11f))
+                    Toast.makeText(requireContext(), "Unable to get current location", Toast.LENGTH_SHORT).show()
+                }
+            }.addOnFailureListener {
+                Log.e("MapFragment", "Failed to retrieve location", it)
+                Toast.makeText(requireContext(), "Failed to retrieve location", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 100 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            enableMyLocation()
+            moveToMyLocation()
+        }
+    }
+
+
 
     private fun showError(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
