@@ -1,4 +1,4 @@
-package com.iss.ui.fragments
+package com.iss.ui.activities
 
 import android.app.AlertDialog
 import android.os.Bundle
@@ -15,6 +15,7 @@ import com.iss.api.PropertyApi
 import com.iss.databinding.FragmentAddPropertyBinding
 import com.iss.model.PropertyRequest
 import com.iss.network.NetworkService
+import com.iss.utils.UserManager
 import kotlinx.coroutines.launch
 import retrofit2.Response
 
@@ -63,6 +64,9 @@ class AddPropertyFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // 初始化UserManager
+        UserManager.init(requireContext())
 
         // 初始化API
         propertyApi = NetworkService.propertyApi
@@ -272,9 +276,17 @@ class AddPropertyFragment : Fragment() {
         binding.btnSubmit.isEnabled = false
         binding.progressBar.visibility = View.VISIBLE
 
+        // 检查用户是否已登录
+        if (!UserManager.isLoggedIn()) {
+            Toast.makeText(requireContext(), "Please login first", Toast.LENGTH_LONG).show()
+            binding.btnSubmit.isEnabled = true
+            binding.progressBar.visibility = View.GONE
+            return
+        }
+        
         val propertyRequest = PropertyRequest(
             listingTitle = binding.etListingTitle.text.toString(),
-            sellerId = 101L, // 临时使用固定值，后续从登录信息获取
+            sellerId = UserManager.getCurrentUserId(), // 使用当前登录用户的ID
             town = selectedTown,
             postalCode = binding.etPostalCode.text.toString(),
             bedroomNumber = binding.etBedroomNumber.text.toString().toInt(),

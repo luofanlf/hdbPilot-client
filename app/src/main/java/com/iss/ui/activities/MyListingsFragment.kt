@@ -1,4 +1,4 @@
-package com.iss.ui.fragments
+package com.iss.ui.activities
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -16,6 +16,7 @@ import com.iss.databinding.FragmentMyListingsBinding
 import com.iss.model.Property
 import com.iss.network.NetworkService
 import com.iss.ui.adapters.MyListingsAdapter
+import com.iss.utils.UserManager
 import kotlinx.coroutines.launch
 import retrofit2.Response
 
@@ -37,6 +38,9 @@ class MyListingsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // 初始化UserManager
+        UserManager.init(requireContext())
 
         // 初始化API
         propertyApi = NetworkService.propertyApi
@@ -85,8 +89,18 @@ class MyListingsFragment : Fragment() {
 
         lifecycleScope.launch {
             try {
+                // 检查用户是否已登录
+                if (!UserManager.isLoggedIn()) {
+                    Toast.makeText(requireContext(), "Please login first", Toast.LENGTH_LONG).show()
+                    showEmptyState()
+                    return@launch
+                }
+                
+                // 获取当前用户ID
+                val currentUserId = UserManager.getCurrentUserId()
+                
                 // 调用获取用户发布房源的API
-                val response = propertyApi.getUserProperties(101L) // 使用固定的sellerId，实际应用中应该从用户登录信息获取
+                val response = propertyApi.getUserProperties(currentUserId)
                 
                 if (response.isSuccessful) {
                     val properties = response.body()?.data ?: emptyList()
