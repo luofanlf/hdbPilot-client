@@ -5,14 +5,25 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.iss.R
+import com.iss.api.PropertyApi
 import com.iss.databinding.ItemMyListingBinding
 import com.iss.model.Property
+import com.iss.model.PropertyImage
+import com.iss.network.NetworkService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 
 class MyListingsAdapter(
     private val onItemClick: (Property) -> Unit
 ) : ListAdapter<Property, MyListingsAdapter.ViewHolder>(PropertyDiffCallback()) {
+
+    private val propertyApi = NetworkService.propertyApi
+    private val imageCache = mutableMapOf<Long, String>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemMyListingBinding.inflate(
@@ -42,6 +53,9 @@ class MyListingsAdapter(
                 floorInfoText.text = "Level ${property.storey}"
                 flatModelText.text = property.flatModel
 
+                // 加载缩略图
+                loadPropertyThumbnail(propertyImage, property.id)
+
                 // 设置整个item的点击事件
                 root.setOnClickListener {
                     onItemClick(property)
@@ -61,6 +75,72 @@ class MyListingsAdapter(
                 this
             }
         }
+    }
+
+    private fun loadPropertyThumbnail(imageView: android.widget.ImageView, propertyId: Long) {
+        // 首先检查缓存
+        imageCache[propertyId]?.let { cachedUrl ->
+            Glide.with(imageView.context)
+                .load(cachedUrl)
+                .placeholder(R.drawable.ic_property_placeholder)
+                .error(R.drawable.ic_property_placeholder)
+                .centerCrop()
+                .into(imageView)
+            return
+        }
+
+        // 如果没有缓存，从API获取图片
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = propertyApi.getPropertyImages(propertyId)
+                if (response.isSuccessful) {
+                    val images = response.body()?.data
+                    if (!images.isNullOrEmpty()) {
+                        val firstImageUrl = images.first().imageUrl
+                        // 缓存URL
+                        imageCache[propertyId] = firstImageUrl
+                        
+                        // 在主线程中加载图片
+                        CoroutineScope(Dispatchers.Main).launch {
+                            Glide.with(imageView.context)
+                                .load(firstImageUrl)
+                                .placeholder(R.drawable.ic_property_placeholder)
+                                .error(R.drawable.ic_property_placeholder)
+                                .centerCrop()
+                                .into(imageView)
+                        }
+                    } else {
+                        // 没有图片，显示占位符
+                        CoroutineScope(Dispatchers.Main).launch {
+                            Glide.with(imageView.context)
+                                .load(R.drawable.ic_property_placeholder)
+                                .centerCrop()
+                                .into(imageView)
+                        }
+                    }
+                } else {
+                    // API调用失败，显示占位符
+                    CoroutineScope(Dispatchers.Main).launch {
+                        Glide.with(imageView.context)
+                            .load(R.drawable.ic_property_placeholder)
+                            .centerCrop()
+                            .into(imageView)
+                    }
+                }
+            } catch (e: Exception) {
+                // 异常情况，显示占位符
+                CoroutineScope(Dispatchers.Main).launch {
+                    Glide.with(imageView.context)
+                        .load(R.drawable.ic_property_placeholder)
+                        .centerCrop()
+                        .into(imageView)
+                }
+            }
+        }
+    }
+
+    fun clearCache() {
+        imageCache.clear()
     }
 
     private class PropertyDiffCallback : DiffUtil.ItemCallback<Property>() {
