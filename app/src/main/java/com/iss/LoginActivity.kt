@@ -1,6 +1,8 @@
 package com.iss
 
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -12,8 +14,6 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.iss.model.LoginRequest
 import com.iss.network.NetworkService
-import com.iss.utils.UserManager
-
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -27,16 +27,25 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var tilPassword: TextInputLayout
     private lateinit var btnLogin: Button
     private lateinit var tvError: TextView
-    private lateinit var tvSignUpLink: TextView // Declare the TextView for Sign Up link
+    private lateinit var tvSignUpLink: TextView
+
+    private lateinit var sharedPreferences: SharedPreferences // 直接在 Activity 中声明 SharedPreferences
 
     private val authApi by lazy { NetworkService.authApi }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_login)
 
-        // 初始化UserManager
-        UserManager.init(this)
+        // 初始化 SharedPreferences
+        sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+
+        if (isLoggedIn()) {
+            Log.d("LoginActivity", "User is already logged in, navigating to MainActivity.")
+            navigateToMainActivity()
+            return
+        }
+
+        setContentView(R.layout.activity_login)
 
         etEmail = findViewById(R.id.etEmail)
         tilEmail = findViewById(R.id.tilEmail)
@@ -44,15 +53,14 @@ class LoginActivity : AppCompatActivity() {
         tilPassword = findViewById(R.id.tilPassword)
         btnLogin = findViewById(R.id.btnLogin)
         tvError = findViewById(R.id.tvError)
-        tvSignUpLink = findViewById(R.id.tvSignUpLink) // Initialize the TextView
+        tvSignUpLink = findViewById(R.id.tvSignUpLink)
 
         btnLogin.setOnClickListener {
             performLogin()
         }
 
-        // Set up click listener for the Sign Up link
         tvSignUpLink.setOnClickListener {
-            val intent = Intent(this, RegisterActivity::class.java) // Navigate to RegisterActivity
+            val intent = Intent(this, RegisterActivity::class.java)
             startActivity(intent)
         }
     }
@@ -74,10 +82,7 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
-        // WARNING: DO NOT LOG SENSITIVE INFORMATION IN PRODUCTION
-        Log.d("LOGIN_DEBUG", "Attempting login with:")
-        Log.d("LOGIN_DEBUG", "  Username: $username")
-        Log.d("LOGIN_DEBUG", "  Password: $password (FOR DEBUGGING ONLY - REMOVE IN PRODUCTION)")
+        Log.d("LOGIN_DEBUG", "Attempting login with username: $username")
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -90,23 +95,19 @@ class LoginActivity : AppCompatActivity() {
                         if (baseResponse != null && baseResponse.code == 0 && baseResponse.data != null) {
                             val userId = baseResponse.data
                             Log.d("LoginActivity", "Login Successful! User ID: $userId")
-                            
-                            // 保存用户信息到UserManager
-                            UserManager.setCurrentUser(userId, username)
-                            
+
+
+                            saveLoginStatus(userId.toString(), username)
+
                             Toast.makeText(this@LoginActivity, "Login Successful! Welcome, $username", Toast.LENGTH_SHORT).show()
 
-                            val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            startActivity(intent)
-                            finish()
+                            navigateToMainActivity()
 
                         } else {
                             val errorMessage = baseResponse?.message ?: "Login failed due to unknown reason."
                             Log.w("LoginActivity", "Login Failed (Backend Business Logic): $errorMessage (Code: ${baseResponse?.code})")
                             tvError.text = errorMessage
                             tvError.visibility = View.VISIBLE
-                            Toast.makeText(this@LoginActivity, errorMessage, Toast.LENGTH_LONG).show()
                         }
                     } else {
                         val errorBody = response.errorBody()?.string()
@@ -119,7 +120,6 @@ class LoginActivity : AppCompatActivity() {
                         Log.e("LoginActivity", "Login Failed (HTTP): ${response.code()} - $errorBody")
                         tvError.text = errorMessage
                         tvError.visibility = View.VISIBLE
-                        Toast.makeText(this@LoginActivity, errorMessage, Toast.LENGTH_LONG).show()
                     }
                 }
             } catch (e: Exception) {
@@ -127,9 +127,29 @@ class LoginActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     tvError.text = "Network error or server unavailable: ${e.message}"
                     tvError.visibility = View.VISIBLE
-                    Toast.makeText(this@LoginActivity, "Network error: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
+        }
+    }
+
+    private fun navigateToMainActivity() {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+
+
+    private fun isLoggedIn(): Boolean {
+        return sharedPreferences.getBoolean("is_logged_in", false)
+    }
+
+    private fun saveLoginStatus(userId: String, username: String) {
+        sharedPreferences.edit().apply {
+            putBoolean("is_logged_in", true)
+            putString("user_id", userId)
+            putString("username", username)
+            apply()
         }
     }
 }
