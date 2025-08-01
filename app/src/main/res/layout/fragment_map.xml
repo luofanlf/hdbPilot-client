@@ -1,0 +1,49 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:map="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/mapContainer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.google.android.gms.maps.MapView
+        android:id="@+id/mapView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        map:uiZoomControls="false"
+        map:uiCompass="true"
+        android:contentDescription="@string/map_view_desc" />
+
+    <LinearLayout
+        android:id="@+id/zoomControls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_gravity="end|bottom"
+        android:layout_margin="16dp">
+
+        <ImageButton
+            android:id="@+id/zoomIn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/zoom_button_bg"
+            android:src="@drawable/ic_zoom_in"
+            android:contentDescription="@string/zoom_in_desc" />
+
+        <ImageButton
+            android:id="@+id/zoomOut"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/zoom_button_bg"
+            android:src="@drawable/ic_zoom_out"
+            android:contentDescription="@string/zoom_out_desc" />
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/myLocationButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="start|bottom"
+        android:layout_margin="16dp"
+        android:background="@drawable/zoom_button_bg"
+        android:src="@drawable/ic_location"
+        android:contentDescription="@string/my_location_desc" />
+</FrameLayout>

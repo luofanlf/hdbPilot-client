@@ -49,7 +49,16 @@ dependencies {
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.16.3")
+
+    // ONNX Runtime for Android
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.17.0")
+
+    //map
+    implementation("com.google.android.gms:play-services-maps:18.1.0")
+    implementation("com.google.maps.android:android-maps-utils:3.8.0")
+    implementation("androidx.fragment:fragment-ktx:1.6.2") 
+
+
     // 网络请求相关
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)

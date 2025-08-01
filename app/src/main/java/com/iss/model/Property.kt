@@ -1,5 +1,6 @@
 package com.iss.model
 
+import com.google.android.gms.maps.model.LatLng
 import java.time.LocalDateTime
 
 data class Property(
@@ -22,6 +23,10 @@ data class Property(
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
     val imageUrl: String? = null,
+
+    //for map
+    @Transient
+    var latLng: LatLng? = null,
 
     // --- 新增的用于预测模型的特征字段 ---
     val flatType: String, // flat_type 字段

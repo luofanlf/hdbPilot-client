@@ -10,6 +10,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputEditText
@@ -20,8 +21,6 @@ import com.iss.repository.PropertyRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import androidx.navigation.fragment.findNavController
 
 class HomeFragment : Fragment() {
 
@@ -52,10 +51,7 @@ class HomeFragment : Fragment() {
         
         // 设置RecyclerView
         setupRecyclerView()
-        
-        // 设置搜索功能
-        setupSearch()
-        
+
         // 加载数据
         loadProperties()
     }

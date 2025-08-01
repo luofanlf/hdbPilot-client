@@ -72,5 +72,18 @@
             android:name="property_id"
             app:argType="long" />
     </fragment>
-    
+
+    <fragment
+        android:id="@+id/mapFragment"
+        android:name="com.iss.ui.map.MapFragment"
+        android:label="Map"
+        tools:layout="@layout/fragment_map">
+        <argument
+            android:name="highlight_property_id"
+            app:argType="long" />
+        <action
+            android:id="@+id/action_mapFragment_to_propertyDetailFragment"
+            app:destination="@id/propertyDetailFragment" />
+    </fragment>
+
 </navigation>

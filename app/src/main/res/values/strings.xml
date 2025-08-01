@@ -83,5 +83,9 @@
             <item>46 TO 48</item>
             <item>49 TO 51</item>
         </string-array>
+    <string name="zoom_in_desc">Zoom in</string>
+    <string name="zoom_out_desc">Zoom out</string>
+    <string name="my_location_desc">My location</string>
+    <string name="map_view_desc">Map showing property locations</string>
 
 </resources>

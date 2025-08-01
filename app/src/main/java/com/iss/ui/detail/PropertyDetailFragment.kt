@@ -12,12 +12,12 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import com.iss.PredActivity
 import com.iss.R
-import com.iss.model.Property // Assuming your Property model is here
-import com.iss.repository.PropertyRepository
-import com.iss.PredActivity // Make sure to import PredActivity
 import com.iss.api.PropertyApi
+import com.iss.model.Property
 import com.iss.network.NetworkService
+import com.iss.repository.PropertyRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -50,6 +50,8 @@ class PropertyDetailFragment : Fragment() {
 
     private var loadedProperty: Property? = null // New: To store the loaded property object
 
+    private lateinit var btnViewMap: Button
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
@@ -71,7 +73,16 @@ class PropertyDetailFragment : Fragment() {
 
         initViews(view)
         setupGoToPredictionButton() // Set up button listener after views are initialized
-        
+
+        btnViewMap.setOnClickListener {
+            loadedProperty?.let { property ->
+                val bundle = Bundle().apply {
+                    putLong("highlight_property_id", property.id)
+                }
+                findNavController().navigate(R.id.mapFragment, bundle)
+            }
+        }
+
         // 只有从My Listings进入时才设置编辑和删除按钮
         if (isFromMyListings) {
             setupActionButtons() // Set up edit and delete buttons
@@ -110,6 +121,8 @@ class PropertyDetailFragment : Fragment() {
         btnGoToPrediction = view.findViewById(R.id.btnGoToPrediction)
         btnEdit = view.findViewById(R.id.btnEdit)
         btnDelete = view.findViewById(R.id.btnDelete)
+
+        btnViewMap = view.findViewById(R.id.btnViewMap)
     }
 
     private fun setupGoToPredictionButton() {
