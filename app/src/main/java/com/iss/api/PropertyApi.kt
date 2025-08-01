@@ -3,6 +3,7 @@ package com.iss.api
 import com.iss.model.BaseResponse
 import com.iss.model.PageResponse
 import com.iss.model.Property
+import com.iss.model.PropertyImage
 import com.iss.model.PropertyRequest
 import retrofit2.Response
 import retrofit2.http.GET
@@ -40,4 +41,13 @@ interface PropertyApi {
     
     @PUT("property/{id}")
     suspend fun updateProperty(@Path("id") id: Long, @Body propertyRequest: PropertyRequest): Response<BaseResponse<Property>>
+    
+    @GET("property/{id}/images")
+    suspend fun getPropertyImages(@Path("id") propertyId: Long): Response<BaseResponse<List<PropertyImage>>>
+    
+    @POST("property/{id}/images/batch")
+    suspend fun uploadPropertyImages(
+        @Path("id") propertyId: Long,
+        @Body imageUrls: List<String>
+    ): Response<BaseResponse<List<PropertyImage>>>
 }

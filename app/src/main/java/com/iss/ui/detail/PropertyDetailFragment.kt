@@ -14,10 +14,13 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.iss.PredActivity
 import com.iss.R
+import androidx.viewpager2.widget.ViewPager2
 import com.iss.api.PropertyApi
 import com.iss.model.Property
+import com.iss.model.PropertyImage
 import com.iss.network.NetworkService
 import com.iss.repository.PropertyRepository
+import com.iss.ui.adapters.PropertyImageAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,7 +29,8 @@ class PropertyDetailFragment : Fragment() {
 
     private lateinit var titleText: TextView
     private lateinit var addressText: TextView
-    private lateinit var propertyImageView: ImageView
+    private lateinit var propertyImageViewPager: ViewPager2
+    private lateinit var imageCounterText: TextView
     private lateinit var resalePriceText: TextView
     private lateinit var forecastPriceText: TextView
     private lateinit var bedroomText: TextView
@@ -49,6 +53,8 @@ class PropertyDetailFragment : Fragment() {
     private var isFromMyListings: Boolean = false // 标记是否来自My Listings
 
     private var loadedProperty: Property? = null // New: To store the loaded property object
+    private lateinit var imageAdapter: PropertyImageAdapter
+    private var propertyImages: List<PropertyImage> = emptyList()
 
     private lateinit var btnViewMap: Button
 
@@ -95,6 +101,9 @@ class PropertyDetailFragment : Fragment() {
         // 初始化API
         propertyApi = NetworkService.propertyApi
 
+        // 初始化ViewPager2
+        setupViewPager()
+
         if (propertyId != -1L) {
             loadPropertyDetail(propertyId)
         } else {
@@ -105,7 +114,8 @@ class PropertyDetailFragment : Fragment() {
     private fun initViews(view: View) {
         titleText = view.findViewById(R.id.titleText)
         addressText = view.findViewById(R.id.addressText)
-        propertyImageView = view.findViewById(R.id.propertyImageView)
+        propertyImageViewPager = view.findViewById(R.id.propertyImageViewPager)
+        imageCounterText = view.findViewById(R.id.imageCounterText)
         resalePriceText = view.findViewById(R.id.resalePriceText)
 
         bedroomText = view.findViewById(R.id.bedroomText)
@@ -123,6 +133,53 @@ class PropertyDetailFragment : Fragment() {
         btnDelete = view.findViewById(R.id.btnDelete)
 
         btnViewMap = view.findViewById(R.id.btnViewMap)
+    }
+
+    private fun setupViewPager() {
+        imageAdapter = PropertyImageAdapter()
+        propertyImageViewPager.adapter = imageAdapter
+        
+        // 设置页面切换监听器
+        propertyImageViewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                updateImageCounter(position)
+            }
+        })
+    }
+
+    private fun updateImageCounter(position: Int) {
+        if (propertyImages.isNotEmpty()) {
+            imageCounterText.text = "${position + 1}/${propertyImages.size}"
+            imageCounterText.visibility = View.VISIBLE
+        } else {
+            imageCounterText.visibility = View.GONE
+        }
+    }
+
+    private fun loadPropertyImages(propertyId: Long) {
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val response = propertyApi.getPropertyImages(propertyId)
+                
+                if (response.isSuccessful) {
+                    propertyImages = response.body()?.data ?: emptyList()
+                    imageAdapter.updateImages(propertyImages)
+                    
+                    // 更新图片计数器
+                    if (propertyImages.isNotEmpty()) {
+                        updateImageCounter(0)
+                    } else {
+                        imageCounterText.visibility = View.GONE
+                    }
+                } else {
+                    // 如果获取图片失败，隐藏计数器
+                    imageCounterText.visibility = View.GONE
+                }
+            } catch (e: Exception) {
+                // 如果获取图片失败，隐藏计数器
+                imageCounterText.visibility = View.GONE
+            }
+        }
     }
 
     private fun setupGoToPredictionButton() {
@@ -216,6 +273,9 @@ class PropertyDetailFragment : Fragment() {
                         loadedProperty = property // Store the loaded property
                         showLoading(false)
                         displayPropertyDetail(property)
+                        
+                        // 加载房源图片
+                        loadPropertyImages(id)
                     },
                     onFailure = { exception ->
                         android.util.Log.e("PropertyDetailFragment", "Failed to load property: ${exception.message}")
