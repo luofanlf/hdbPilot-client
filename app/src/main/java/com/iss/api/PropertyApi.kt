@@ -1,6 +1,7 @@
 package com.iss.api
 
 import com.iss.model.BaseResponse
+import com.iss.model.PageResponse
 import com.iss.model.Property
 import com.iss.model.PropertyRequest
 import retrofit2.Response
@@ -10,6 +11,7 @@ import retrofit2.http.PUT
 import retrofit2.http.DELETE
 import retrofit2.http.Path
 import retrofit2.http.Body
+import retrofit2.http.Query
 
 interface PropertyApi {
     @GET("property/list") // <-- 修改这里，移除了 'api/'
@@ -17,6 +19,12 @@ interface PropertyApi {
 
     @GET("property/list") // <-- 修改这里，移除了 'api/'
     suspend fun getPropertyListWrapped(): Response<BaseResponse<List<Property>>>
+
+    @GET("property/list")
+    suspend fun getPropertyListPaged(
+        @Query("pageNum") pageNum: Int = 1,
+        @Query("pageSize") pageSize: Int = 10
+    ): Response<BaseResponse<PageResponse<Property>>>
 
     @GET("property/{id}") // <-- 修改这里，移除了 'api/'
     suspend fun getPropertyById(@Path("id") id: Long): Response<BaseResponse<Property>>

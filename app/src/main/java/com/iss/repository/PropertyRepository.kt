@@ -1,6 +1,7 @@
 package com.iss.repository
 
 import android.util.Log
+import com.iss.model.PageResponse
 import com.iss.model.Property
 import com.iss.network.NetworkService
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +40,33 @@ class PropertyRepository {
             
         } catch (e: Exception) {
             Log.e("PropertyRepository", "Exception in getPropertyList", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getPropertyListPaged(pageNum: Int = 1, pageSize: Int = 10): Result<PageResponse<Property>> = withContext(Dispatchers.IO) {
+        try {
+            Log.d("PropertyRepository", "Making paged API call... pageNum: $pageNum, pageSize: $pageSize")
+            val response = propertyApi.getPropertyListPaged(pageNum, pageSize)
+            Log.d("PropertyRepository", "Paged API - Response code: ${response.code()}")
+            
+            if (response.isSuccessful) {
+                val apiResponse = response.body()
+                Log.d("PropertyRepository", "Paged API - Response body: $apiResponse")
+                
+                if (apiResponse != null && apiResponse.data != null) {
+                    Log.d("PropertyRepository", "Paged API - Success: ${apiResponse.data.records.size} records, total: ${apiResponse.data.total}")
+                    Result.success(apiResponse.data)
+                } else {
+                    Log.e("PropertyRepository", "Paged API - Response or data is null")
+                    Result.failure(Exception("No data received"))
+                }
+            } else {
+                Log.e("PropertyRepository", "Paged API - API request failed: ${response.code()} - ${response.message()}")
+                Result.failure(Exception("API request failed: ${response.code()} - ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("PropertyRepository", "Exception in getPropertyListPaged", e)
             Result.failure(e)
         }
     }
