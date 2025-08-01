@@ -12,6 +12,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.iss.model.LoginRequest
 import com.iss.network.NetworkService
+import com.iss.utils.UserManager
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +34,9 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
+
+        // 初始化UserManager
+        UserManager.init(this)
 
         etEmail = findViewById(R.id.etEmail)
         tilEmail = findViewById(R.id.tilEmail)
@@ -86,6 +90,10 @@ class LoginActivity : AppCompatActivity() {
                         if (baseResponse != null && baseResponse.code == 0 && baseResponse.data != null) {
                             val userId = baseResponse.data
                             Log.d("LoginActivity", "Login Successful! User ID: $userId")
+                            
+                            // 保存用户信息到UserManager
+                            UserManager.setCurrentUser(userId, username)
+                            
                             Toast.makeText(this@LoginActivity, "Login Successful! Welcome, $username", Toast.LENGTH_SHORT).show()
 
                             val intent = Intent(this@LoginActivity, MainActivity::class.java)

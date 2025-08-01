@@ -30,13 +30,13 @@
     
     <fragment
         android:id="@+id/addPropertyFragment"
-        android:name="com.iss.ui.fragments.AddPropertyFragment"
+        android:name="com.iss.ui.activities.AddPropertyFragment"
         android:label="Add Property"
         tools:layout="@layout/fragment_add_property" />
     
     <fragment
         android:id="@+id/myListingsFragment"
-        android:name="com.iss.ui.fragments.MyListingsFragment"
+        android:name="com.iss.ui.activities.MyListingsFragment"
         android:label="My Listings"
         tools:layout="@layout/fragment_my_listings">
         <action
@@ -65,7 +65,7 @@
     
     <fragment
         android:id="@+id/editPropertyFragment"
-        android:name="com.iss.ui.fragments.EditPropertyFragment"
+        android:name="com.iss.ui.activities.EditPropertyFragment"
         android:label="Edit Property"
         tools:layout="@layout/fragment_edit_property">
         <argument

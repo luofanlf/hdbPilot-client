@@ -1,4 +1,4 @@
-package com.iss.ui.fragments
+package com.iss.ui.activities
 
 import android.app.AlertDialog
 import android.os.Bundle
@@ -15,6 +15,7 @@ import com.iss.databinding.FragmentEditPropertyBinding
 import com.iss.model.Property
 import com.iss.model.PropertyRequest
 import com.iss.network.NetworkService
+import com.iss.utils.UserManager
 import kotlinx.coroutines.launch
 import retrofit2.Response
 
@@ -37,6 +38,9 @@ class EditPropertyFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // 初始化UserManager
+        UserManager.init(requireContext())
 
         // 获取要编辑的房源ID
         arguments?.let {
@@ -166,10 +170,16 @@ class EditPropertyFragment : Fragment() {
             return
         }
 
+        // 检查用户是否已登录
+        if (!UserManager.isLoggedIn()) {
+            Toast.makeText(requireContext(), "Please login first", Toast.LENGTH_LONG).show()
+            return
+        }
+        
         // 创建PropertyRequest对象
         val propertyRequest = PropertyRequest(
             listingTitle = binding.etTitle.text.toString(),
-            sellerId = originalProperty?.sellerId ?: 101L,
+            sellerId = UserManager.getCurrentUserId(), // 使用当前登录用户的ID
             town = binding.etTown.text.toString(),
             postalCode = binding.etPostalCode.text.toString(),
             bedroomNumber = binding.etBedroomNumber.text.toString().toInt(),
