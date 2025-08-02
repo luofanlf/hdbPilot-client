@@ -67,7 +67,9 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.gson)
-    
+    implementation("de.hdodenhof:circleimageview:3.1.0")
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+
     // 协程
     implementation(libs.kotlinx.coroutines.android)
     
