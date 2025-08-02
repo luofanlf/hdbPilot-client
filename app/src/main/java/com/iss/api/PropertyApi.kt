@@ -5,6 +5,8 @@ import com.iss.model.PageResponse
 import com.iss.model.Property
 import com.iss.model.PropertyRequest
 import com.iss.model.PropertySearchRequest
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -12,6 +14,7 @@ import retrofit2.http.PUT
 import retrofit2.http.DELETE
 import retrofit2.http.Path
 import retrofit2.http.Body
+import retrofit2.http.Part
 import retrofit2.http.Query
 
 interface PropertyApi {
@@ -20,6 +23,9 @@ interface PropertyApi {
 
     @GET("property/list")
     suspend fun getPropertyListWrapped(): Response<BaseResponse<List<Property>>>
+
+    @GET("property/list/all")
+    suspend fun getPropertyListAll(): Response<BaseResponse<List<Property>>>
 
     @GET("property/list")
     suspend fun getPropertyListPaged(
@@ -67,9 +73,12 @@ interface PropertyApi {
     // @GET("property/{id}/images")
     // suspend fun getPropertyImages(@Path("id") propertyId: Long): Response<BaseResponse<List<PropertyImage>>>
     
-    // @POST("property/{id}/images/batch")
-    // suspend fun uploadPropertyImages(
-    //     @Path("id") propertyId: Long,
-    //     @Body imageUrls: List<String>
-    // ): Response<BaseResponse<List<PropertyImage>>>
+    @POST("property/{propertyId}/images")
+    suspend fun addPropertyImage(
+        @Path("propertyId") propertyId: Long,
+        @Body requestBody: RequestBody
+    ): Response<BaseResponse<PropertyImage>>
+    
+    @DELETE("property/images/{imageId}")
+    suspend fun deletePropertyImage(@Path("imageId") imageId: Long): Response<BaseResponse<Boolean>>
 }

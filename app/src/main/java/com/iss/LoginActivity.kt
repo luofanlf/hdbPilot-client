@@ -14,6 +14,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.iss.model.LoginRequest
 import com.iss.network.NetworkService
+import com.iss.utils.UserManager
 import com.iss.network.initialize // 确保导入
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -195,11 +196,14 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun saveLoginStatus(userId: String, username: String) {
-        sharedPreferences.edit().apply {
-            putBoolean("is_logged_in", true)
-            putString("user_id", userId)
-            putString("username", username)
-            apply()
+        // 使用UserManager来保存用户信息
+        UserManager.init(this)
+        try {
+            val userIdLong = userId.toLong()
+            UserManager.setCurrentUser(userIdLong, username)
+        } catch (e: NumberFormatException) {
+            // 如果转换失败，记录错误
+            Log.e("LoginActivity", "Failed to convert userId to Long: $userId")
         }
     }
 }

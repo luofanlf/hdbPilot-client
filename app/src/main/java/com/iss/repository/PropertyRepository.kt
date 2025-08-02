@@ -15,28 +15,31 @@ class PropertyRepository {
         try {
             Log.d("PropertyRepository", "Making API call...")
 
-            // 如果直接格式失败，尝试包装格式
+            // 尝试新的API端点
             try {
-                Log.d("PropertyRepository", "Trying wrapped format...")
-                val response = propertyApi.getPropertyListWrapped()
-                Log.d("PropertyRepository", "Wrapped format - Response code: ${response.code()}")
+                Log.d("PropertyRepository", "Trying new API endpoint...")
+                val response = propertyApi.getPropertyListAll()
+                Log.d("PropertyRepository", "New API - Response code: ${response.code()}")
                 
                 if (response.isSuccessful) {
                     val apiResponse = response.body()
-                    Log.d("PropertyRepository", "Wrapped format - Response body: $apiResponse")
+                    Log.d("PropertyRepository", "New API - Response body: $apiResponse")
                     
                     if (apiResponse != null && apiResponse.data != null) {
-                        Log.d("PropertyRepository", "Wrapped format - Data size: ${apiResponse.data.size}")
+                        Log.d("PropertyRepository", "New API - Data size: ${apiResponse.data.size}")
                         return@withContext Result.success(apiResponse.data)
+                    } else {
+                        Log.e("PropertyRepository", "New API - Response or data is null")
+                        return@withContext Result.failure(Exception("No data received"))
                     }
+                } else {
+                    Log.e("PropertyRepository", "New API - API request failed: ${response.code()} - ${response.message()}")
+                    return@withContext Result.failure(Exception("API request failed: ${response.code()} - ${response.message()}"))
                 }
                 
-                Log.e("PropertyRepository", "Both formats failed")
-                Result.failure(Exception("API request failed: ${response.code()} - ${response.message()}"))
-                
             } catch (e: Exception) {
-                Log.e("PropertyRepository", "Wrapped format also failed", e)
-                Result.failure(e)
+                Log.e("PropertyRepository", "New API failed", e)
+                return@withContext Result.failure(e)
             }
             
         } catch (e: Exception) {
