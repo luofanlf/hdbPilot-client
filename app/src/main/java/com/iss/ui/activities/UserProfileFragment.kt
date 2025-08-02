@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.google.android.material.textfield.TextInputEditText
 import com.iss.LoginActivity
@@ -45,7 +46,6 @@ class UserProfileFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
 
         Log.d("UserProfileFragment", "onViewCreated() called. Initializing UI components.")
         // 1. 绑定UI组件
@@ -159,10 +159,11 @@ class UserProfileFragment : Fragment() {
                     if (response.isSuccessful) {
                         val baseResponse = response.body()
                         Log.d("UserProfileFragment", "Response body received: ${baseResponse.toString()}")
+
+                        // 关键修改: 检查后端返回的错误信息
                         if (baseResponse?.code == 0) {
                             Toast.makeText(requireContext(), "Profile updated successfully!", Toast.LENGTH_SHORT).show()
                             Log.i("UserProfileFragment", "Profile updated successfully! Updating SharedPreferences.")
-                            // 更新SharedPreferences，假设后端返回最新的用户信息
                             val sharedPreferences = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
                             sharedPreferences.edit().apply {
                                 putString("nickname", etNickname.text.toString().trim())
@@ -170,15 +171,21 @@ class UserProfileFragment : Fragment() {
                                 putString("bio", etBio.text.toString().trim())
                                 apply()
                             }
-                            // 清空密码输入框
                             etOldPassword.text?.clear()
                             etNewPassword.text?.clear()
                             etConfirmPassword.text?.clear()
-                        } else {
+                        } else if (baseResponse?.message?.contains("User not found", ignoreCase = true) == true || response.code() == 401) {
+                            // 关键修改: 如果后端返回“用户不存在”或401错误，显示特定提示并登出
+                            showSessionExpiredDialog()
+                        }
+                        else {
                             val errorMessage = baseResponse?.message ?: "Failed to update profile."
                             Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show()
                             Log.w("UserProfileFragment", "Update failed due to backend logic: $errorMessage (Code: ${baseResponse?.code})")
                         }
+                    } else if (response.code() == 401) {
+                        // 关键修改: 如果HTTP状态码是401，也显示特定提示并登出
+                        showSessionExpiredDialog()
                     } else {
                         val errorBody = response.errorBody()?.string()
                         val errorMessage = "Failed to update profile: ${response.code()} - $errorBody"
@@ -193,6 +200,21 @@ class UserProfileFragment : Fragment() {
                 }
             }
         }
+    }
+
+    // 关键修改: 新增方法，用于显示会话失效提示框
+    private fun showSessionExpiredDialog() {
+        if (!isAdded) return // 防止 Fragment 未附加到 Activity 时崩溃
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Account Security Notification")
+            .setMessage("You have been logged out for security reasons. Please log in again to verify your identity.")
+            .setPositiveButton("Confirm") { dialog, _ ->
+                dialog.dismiss()
+                performLogout() // 点击确认后执行登出
+            }
+            .setCancelable(false) // 不可取消
+            .show()
     }
 
     private fun performLogout() {
