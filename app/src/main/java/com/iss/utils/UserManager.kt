@@ -25,7 +25,23 @@ object UserManager {
     }
     
     fun getCurrentUserId(): Long {
-        return sharedPreferences.getLong(KEY_USER_ID, -1L)
+        // 先尝试读取Long类型
+        val longUserId = sharedPreferences.getLong(KEY_USER_ID, -1L)
+        if (longUserId != -1L) {
+            return longUserId
+        }
+        
+        // 如果Long类型读取失败，尝试读取String类型并转换
+        val stringUserId = sharedPreferences.getString(KEY_USER_ID, null)
+        return if (stringUserId != null) {
+            try {
+                stringUserId.toLong()
+            } catch (e: NumberFormatException) {
+                -1L
+            }
+        } else {
+            -1L
+        }
     }
     
     fun getCurrentUsername(): String {

@@ -25,6 +25,11 @@ import com.iss.ui.adapters.SelectedImageAdapter
 import com.iss.utils.UserManager
 import kotlinx.coroutines.launch
 import retrofit2.Response
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import java.io.File
+import java.io.InputStream
 
 class AddPropertyFragment : Fragment() {
 
@@ -410,35 +415,48 @@ class AddPropertyFragment : Fragment() {
             binding.progressBar.visibility = View.GONE
             return
         }
-        
-        val propertyRequest = PropertyRequest(
-            listingTitle = binding.etListingTitle.text.toString(),
-            sellerId = UserManager.getCurrentUserId(), // 使用当前登录用户的ID
-            town = selectedTown,
-            postalCode = binding.etPostalCode.text.toString(),
-            bedroomNumber = binding.etBedroomNumber.text.toString().toInt(),
-            bathroomNumber = binding.etBathroomNumber.text.toString().toInt(),
-            block = binding.etBlock.text.toString(),
-            streetName = binding.etStreetName.text.toString(),
-            storey = binding.etStorey.text.toString(),
-            floorAreaSqm = binding.etFloorAreaSqm.text.toString().toFloat(),
-            topYear = selectedYear.toInt(),
-            flatModel = selectedFlatModel,
-            resalePrice = binding.etResalePrice.text.toString().toFloat(),
-            status = "available"
-        )
 
         lifecycleScope.launch {
             try {
-                val response = propertyApi.createProperty(propertyRequest)
+                // 构建multipart请求体
+                val multipartBuilder = MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("listingTitle", binding.etListingTitle.text.toString())
+                    .addFormDataPart("sellerId", UserManager.getCurrentUserId().toString())
+                    .addFormDataPart("town", selectedTown)
+                    .addFormDataPart("postalCode", binding.etPostalCode.text.toString())
+                    .addFormDataPart("bedroomNumber", binding.etBedroomNumber.text.toString())
+                    .addFormDataPart("bathroomNumber", binding.etBathroomNumber.text.toString())
+                    .addFormDataPart("block", binding.etBlock.text.toString())
+                    .addFormDataPart("streetName", binding.etStreetName.text.toString())
+                    .addFormDataPart("storey", binding.etStorey.text.toString())
+                    .addFormDataPart("floorAreaSqm", binding.etFloorAreaSqm.text.toString())
+                    .addFormDataPart("topYear", selectedYear.toString())
+                    .addFormDataPart("flatModel", selectedFlatModel)
+                    .addFormDataPart("resalePrice", binding.etResalePrice.text.toString())
+                    .addFormDataPart("status", "available")
+
+                // 添加图片文件
+                for (imageUri in selectedImages) {
+                    val uri = Uri.parse(imageUri)
+                    val inputStream = requireContext().contentResolver.openInputStream(uri)
+                    val file = createTempFileFromInputStream(inputStream, "image_${System.currentTimeMillis()}")
+                    
+                    val requestBody = RequestBody.create("image/*".toMediaTypeOrNull(), file)
+                    multipartBuilder.addFormDataPart("imageFiles", file.name, requestBody)
+                }
+
+                val multipartBody = multipartBuilder.build()
+
+                val response = propertyApi.createProperty(multipartBody)
+
                 if (response.isSuccessful) {
                     val createdProperty = response.body()?.data
-                    if (createdProperty != null && selectedImages.isNotEmpty()) {
-                        // 上传图片
-                        uploadPropertyImages(createdProperty.id)
-                    } else {
+                    if (createdProperty != null) {
                         Toast.makeText(requireContext(), "Property added successfully!", Toast.LENGTH_LONG).show()
                         findNavController().navigateUp()
+                    } else {
+                        Toast.makeText(requireContext(), "Failed to add property", Toast.LENGTH_LONG).show()
                     }
                 } else {
                     Toast.makeText(requireContext(), "Failed to add property: ${response.message()}", Toast.LENGTH_LONG).show()
@@ -452,53 +470,14 @@ class AddPropertyFragment : Fragment() {
         }
     }
 
-    private suspend fun uploadPropertyImages(propertyId: Long) {
-        try {
-            if (selectedImages.isEmpty()) {
-                Toast.makeText(requireContext(), "Property added successfully!", Toast.LENGTH_LONG).show()
-                findNavController().navigateUp()
-                return
+    private fun createTempFileFromInputStream(inputStream: InputStream?, fileName: String): File {
+        val file = File.createTempFile(fileName, ".jpg")
+        inputStream?.use { input ->
+            file.outputStream().use { output ->
+                input.copyTo(output)
             }
-            
-            // 将本地URI转换为可显示的图片URL
-            val imageUrls = selectedImages.mapIndexed { index, uriString ->
-                // 使用不同的Unsplash图片来模拟用户上传的不同图片
-                // 这些是有效的图片URL，可以正常显示
-                val sampleImages = listOf(
-                    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1560448204-6039e80b7a26?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1560448204-5c9a73d5778a?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1560448204-6c61a7c55319?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1560448204-7c3a05c1e4e8?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1560448204-8c3a05c1e4e8?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1560448204-9c3a05c1e4e8?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1560448204-0c3a05c1e4e8?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1560448204-1c3a05c1e4e8?w=800&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1560448204-2c3a05c1e4e8?w=800&h=600&fit=crop"
-                )
-                
-                // 根据用户选择的图片索引，分配不同的图片URL
-                // 这样每个用户上传的图片都会显示不同的图片
-                val selectedImageIndex = index % sampleImages.size
-                sampleImages[selectedImageIndex]
-            }
-            
-            val response = propertyApi.uploadPropertyImages(propertyId, imageUrls)
-            if (response.isSuccessful) {
-                val uploadedImages = response.body()?.data
-                if (uploadedImages != null && uploadedImages.isNotEmpty()) {
-                    Toast.makeText(requireContext(), "Property and ${uploadedImages.size} images added successfully!", Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(requireContext(), "Property added but images upload failed", Toast.LENGTH_LONG).show()
-                }
-            } else {
-                Toast.makeText(requireContext(), "Property added but images upload failed: ${response.message()}", Toast.LENGTH_LONG).show()
-            }
-            findNavController().navigateUp()
-        } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Error uploading images: ${e.message}", Toast.LENGTH_LONG).show()
-            findNavController().navigateUp()
         }
+        return file
     }
 
     private fun clearForm() {
