@@ -3,6 +3,7 @@ package com.iss.repository
 import android.util.Log
 import com.iss.model.PageResponse
 import com.iss.model.Property
+import com.iss.model.PropertySearchRequest
 import com.iss.network.NetworkService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -70,6 +71,51 @@ class PropertyRepository {
             }
         } catch (e: Exception) {
             Log.e("PropertyRepository", "Exception in getPropertyListPaged", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun searchProperties(searchRequest: PropertySearchRequest): Result<PageResponse<Property>> = withContext(Dispatchers.IO) {
+        try {
+            Log.d("PropertyRepository", "Making search API call... request: $searchRequest")
+            val response = propertyApi.searchProperties(
+                listingTitle = searchRequest.listingTitle,
+                postalCode = searchRequest.postalCode,
+                bedroomNumberMin = searchRequest.bedroomNumberMin,
+                bedroomNumberMax = searchRequest.bedroomNumberMax,
+                bathroomNumberMin = searchRequest.bathroomNumberMin,
+                bathroomNumberMax = searchRequest.bathroomNumberMax,
+                storeyMin = searchRequest.storeyMin,
+                storeyMax = searchRequest.storeyMax,
+                floorAreaSqmMin = searchRequest.floorAreaSqmMin,
+                floorAreaSqmMax = searchRequest.floorAreaSqmMax,
+                topYearMin = searchRequest.topYearMin,
+                topYearMax = searchRequest.topYearMax,
+                resalePriceMin = searchRequest.resalePriceMin,
+                resalePriceMax = searchRequest.resalePriceMax,
+                town = searchRequest.town,
+                pageNum = searchRequest.pageNum,
+                pageSize = searchRequest.pageSize
+            )
+            Log.d("PropertyRepository", "Search API - Response code: ${response.code()}")
+            
+            if (response.isSuccessful) {
+                val apiResponse = response.body()
+                Log.d("PropertyRepository", "Search API - Response body: $apiResponse")
+                
+                if (apiResponse != null && apiResponse.data != null) {
+                    Log.d("PropertyRepository", "Search API - Success: ${apiResponse.data.records.size} records, total: ${apiResponse.data.total}")
+                    Result.success(apiResponse.data)
+                } else {
+                    Log.e("PropertyRepository", "Search API - Response or data is null")
+                    Result.failure(Exception("No data received"))
+                }
+            } else {
+                Log.e("PropertyRepository", "Search API - API request failed: ${response.code()} - ${response.message()}")
+                Result.failure(Exception("API request failed: ${response.code()} - ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("PropertyRepository", "Exception in searchProperties", e)
             Result.failure(e)
         }
     }

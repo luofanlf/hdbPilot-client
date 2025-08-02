@@ -66,6 +66,11 @@ class PropertyAdapter(
     }
 
     private fun loadPropertyThumbnail(imageView: ImageView, propertyId: Long) {
+        // 暂时使用占位符图片，避免API调用错误
+        imageView.setImageResource(R.drawable.ic_property_placeholder)
+        
+        // TODO: 当PropertyImage API修复后，可以恢复以下代码
+        /*
         // 检查缓存
         val cachedImageUrl = imageCache[propertyId]
         if (cachedImageUrl != null) {
@@ -111,6 +116,7 @@ class PropertyAdapter(
                 imageView.setImageResource(R.drawable.ic_property_placeholder)
             }
         }
+        */
     }
 
     override fun getItemCount(): Int = properties.size

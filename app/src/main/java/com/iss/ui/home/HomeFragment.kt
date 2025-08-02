@@ -38,7 +38,7 @@ class HomeFragment : Fragment() {
     private var allProperties = mutableListOf<Property>()
 
     override fun onCreateView(
-        inflater: LayoutInflater,
+        inflater: LayoutInflater, 
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
@@ -47,13 +47,13 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        
         // Initialize views
         propertiesRecyclerView = view.findViewById(R.id.propertiesRecyclerView)
         searchEditText = view.findViewById(R.id.searchEditText)
         loadingProgressBar = view.findViewById(R.id.loadingProgressBar)
         emptyStateText = view.findViewById(R.id.emptyStateText)
-
+        
         // Setup RecyclerView
         setupRecyclerView()
 
@@ -68,7 +68,7 @@ class HomeFragment : Fragment() {
         propertyAdapter = PropertyAdapter(emptyList()) { property ->
             onPropertyClick(property)
         }
-
+        
         propertiesRecyclerView.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = propertyAdapter
@@ -96,15 +96,16 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupSearch() {
-        searchEditText.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                val query = s?.toString() ?: ""
-                propertyAdapter.filterProperties(query)
-                updateEmptyState()
-            }
-        })
+        // 为整个搜索布局添加点击事件
+        searchEditText.setOnClickListener {
+            android.util.Log.d("HomeFragment", "Search box clicked")
+            // Navigate to search page
+            findNavController().navigate(R.id.action_home_to_search)
+        }
+        
+        // 防止搜索框获得焦点，避免键盘弹出
+        searchEditText.isFocusable = false
+        searchEditText.isFocusableInTouchMode = false
     }
 
     private fun loadFirstPage() {
@@ -114,7 +115,7 @@ class HomeFragment : Fragment() {
         allProperties.clear()
         propertyAdapter.updateProperties(emptyList()) // Clear adapter immediately
         loadProperties()
-    }
+            }
 
     private fun loadNextPage() {
         if (isLoading || !hasMoreData) {
@@ -131,7 +132,7 @@ class HomeFragment : Fragment() {
         isLoading = true
         // Only show the main progress bar for the first page
         if (currentPage == 1) {
-            showLoading(true)
+        showLoading(true)
         } else {
             // For subsequent pages, you might want a smaller footer loading indicator
             // For now, we just rely on the isLoading flag
@@ -178,7 +179,7 @@ class HomeFragment : Fragment() {
     private fun showLoading(show: Boolean) {
         loadingProgressBar.visibility = if (show) View.VISIBLE else View.GONE
         if (currentPage == 1) {
-            propertiesRecyclerView.visibility = if (show) View.GONE else View.VISIBLE
+        propertiesRecyclerView.visibility = if (show) View.GONE else View.VISIBLE
         }
     }
 
