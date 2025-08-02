@@ -14,6 +14,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.iss.model.LoginRequest
 import com.iss.network.NetworkService
+import com.iss.network.initialize // 确保导入
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,14 +30,17 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var tvError: TextView
     private lateinit var tvSignUpLink: TextView
 
-    private lateinit var sharedPreferences: SharedPreferences // 直接在 Activity 中声明 SharedPreferences
+    private lateinit var sharedPreferences: SharedPreferences
 
+    // 关键修改：通过 NetworkService 的伴生对象获取 authApi
     private val authApi by lazy { NetworkService.authApi }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 初始化 SharedPreferences
+        // 关键修改：在 onCreate() 的最开始调用初始化方法
+        initialize(this)
+
         sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
 
         if (isLoggedIn()) {
@@ -93,21 +97,15 @@ class LoginActivity : AppCompatActivity() {
                     if (response.isSuccessful) {
                         val baseResponse = response.body()
                         if (baseResponse != null && baseResponse.code == 0 && baseResponse.data != null) {
-                            val userId = baseResponse.data
-                            Log.d("LoginActivity", "Login Successful! User ID: $userId")
-
-
-                            saveLoginStatus(userId.toString(), username)
-
-                            Toast.makeText(this@LoginActivity, "Login Successful! Welcome, $username", Toast.LENGTH_SHORT).show()
-
-                            navigateToMainActivity()
-
+                            Log.d("LoginActivity", "Login Successful! User ID: ${baseResponse.data}")
+                            // 关键修改：登录成功后，调用新的方法获取用户资料
+                            fetchUserProfile()
                         } else {
                             val errorMessage = baseResponse?.message ?: "Login failed due to unknown reason."
                             Log.w("LoginActivity", "Login Failed (Backend Business Logic): $errorMessage (Code: ${baseResponse?.code})")
                             tvError.text = errorMessage
                             tvError.visibility = View.VISIBLE
+                            Toast.makeText(this@LoginActivity, errorMessage, Toast.LENGTH_LONG).show()
                         }
                     } else {
                         val errorBody = response.errorBody()?.string()
@@ -120,6 +118,7 @@ class LoginActivity : AppCompatActivity() {
                         Log.e("LoginActivity", "Login Failed (HTTP): ${response.code()} - $errorBody")
                         tvError.text = errorMessage
                         tvError.visibility = View.VISIBLE
+                        Toast.makeText(this@LoginActivity, errorMessage, Toast.LENGTH_LONG).show()
                     }
                 }
             } catch (e: Exception) {
@@ -127,10 +126,61 @@ class LoginActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     tvError.text = "Network error or server unavailable: ${e.message}"
                     tvError.visibility = View.VISIBLE
+                    Toast.makeText(this@LoginActivity, "Network error: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }
     }
+
+    // 关键修改：新增方法，用于获取并保存用户资料
+    private fun fetchUserProfile() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val profileResponse = authApi.getUserProfile()
+                withContext(Dispatchers.Main) {
+                    if (profileResponse.isSuccessful) {
+                        val baseResponse = profileResponse.body()
+                        if (baseResponse?.code == 0 && baseResponse.data != null) {
+                            val userProfile = baseResponse.data
+                            Log.d("LoginActivity", "Successfully fetched user profile: $userProfile")
+
+                            // 更新SharedPreferences中的所有用户资料
+                            sharedPreferences.edit().apply {
+                                putBoolean("is_logged_in", true)
+                                putString("user_id", userProfile.id.toString())
+                                putString("username", userProfile.username)
+                                putString("nickname", userProfile.nickname)
+                                putString("email", userProfile.email)
+                                putString("bio", userProfile.bio)
+                                apply()
+                            }
+
+                            Toast.makeText(this@LoginActivity, "Login Successful! Welcome, ${userProfile.username}", Toast.LENGTH_SHORT).show()
+                            navigateToMainActivity()
+                        } else {
+                            // 获取资料失败，但已登录，仍然跳转
+                            Log.w("LoginActivity", "Failed to fetch user profile after login. Navigating to main.")
+                            Toast.makeText(this@LoginActivity, "Login successful, but failed to load profile.", Toast.LENGTH_LONG).show()
+                            navigateToMainActivity()
+                        }
+                    } else {
+                        // 获取资料失败，但已登录，仍然跳转
+                        Log.w("LoginActivity", "HTTP error while fetching profile. Navigating to main.")
+                        Toast.makeText(this@LoginActivity, "Login successful, but failed to load profile.", Toast.LENGTH_LONG).show()
+                        navigateToMainActivity()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("LoginActivity", "Network error occurred while fetching profile: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    // 获取资料失败，但已登录，仍然跳转
+                    Toast.makeText(this@LoginActivity, "Login successful, but network error occurred while fetching profile.", Toast.LENGTH_LONG).show()
+                    navigateToMainActivity()
+                }
+            }
+        }
+    }
+
 
     private fun navigateToMainActivity() {
         val intent = Intent(this, MainActivity::class.java)
