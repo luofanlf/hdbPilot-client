@@ -78,6 +78,14 @@ class MyListingsAdapter(
     }
 
     private fun loadPropertyThumbnail(imageView: android.widget.ImageView, propertyId: Long) {
+        // 暂时使用占位符图片，避免API调用错误
+        Glide.with(imageView.context)
+            .load(R.drawable.ic_property_placeholder)
+            .centerCrop()
+            .into(imageView)
+        
+        // TODO: 当PropertyImage API修复后，可以恢复以下代码
+        /*
         // 首先检查缓存
         imageCache[propertyId]?.let { cachedUrl ->
             Glide.with(imageView.context)
@@ -137,6 +145,7 @@ class MyListingsAdapter(
                 }
             }
         }
+        */
     }
 
     fun clearCache() {

@@ -13,7 +13,21 @@
         <action
             android:id="@+id/action_home_to_detail"
             app:destination="@id/propertyDetailFragment" />
+        <action
+            android:id="@+id/action_home_to_search"
+            app:destination="@id/propertySearchFragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/propertySearchFragment"
+        android:name="com.iss.ui.search.PropertySearchFragment"
+        android:label="Property Search"
+        tools:layout="@layout/fragment_property_search">
+        <action
+            android:id="@+id/action_search_to_detail"
+            app:destination="@id/propertyDetailFragment" />
+    </fragment>
+
     <fragment
         android:id="@+id/userProfileFragment"
         android:name="com.iss.ui.activities.UserProfileFragment"
