@@ -157,13 +157,6 @@ class PropertyDetailFragment : Fragment() {
     }
 
     private fun loadPropertyImages(propertyId: Long) {
-        // 暂时跳过图片加载，避免API错误
-        propertyImages = emptyList()
-        imageAdapter.updateImages(propertyImages)
-        imageCounterText.visibility = View.GONE
-        
-        // TODO: 当PropertyImage API修复后，可以恢复以下代码
-        /*
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val response = propertyApi.getPropertyImages(propertyId)
@@ -187,7 +180,6 @@ class PropertyDetailFragment : Fragment() {
                 imageCounterText.visibility = View.GONE
             }
         }
-        */
     }
 
     private fun setupGoToPredictionButton() {

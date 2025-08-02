@@ -5,6 +5,7 @@ import com.iss.model.PageResponse
 import com.iss.model.Property
 import com.iss.model.PropertyRequest
 import com.iss.model.PropertySearchRequest
+import com.iss.model.PropertyImage
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -60,6 +61,9 @@ interface PropertyApi {
     @POST("property")
     suspend fun createProperty(@Body propertyRequest: PropertyRequest): Response<BaseResponse<Property>>
     
+    @POST("property")
+    suspend fun createPropertyWithImages(@Body multipartBody: MultipartBody): Response<BaseResponse<Property>>
+    
     @GET("property/user/{sellerId}")
     suspend fun getUserProperties(@Path("sellerId") sellerId: Long): Response<BaseResponse<List<Property>>>
     
@@ -69,9 +73,8 @@ interface PropertyApi {
     @PUT("property/{id}")
     suspend fun updateProperty(@Path("id") id: Long, @Body propertyRequest: PropertyRequest): Response<BaseResponse<Property>>
     
-    // 临时注释掉这些方法，避免编译错误
-    // @GET("property/{id}/images")
-    // suspend fun getPropertyImages(@Path("id") propertyId: Long): Response<BaseResponse<List<PropertyImage>>>
+    @GET("property/{id}/images")
+    suspend fun getPropertyImages(@Path("id") propertyId: Long): Response<BaseResponse<List<PropertyImage>>>
     
     @POST("property/{propertyId}/images")
     suspend fun addPropertyImage(

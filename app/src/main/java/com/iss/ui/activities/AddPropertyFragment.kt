@@ -448,7 +448,7 @@ class AddPropertyFragment : Fragment() {
 
                 val multipartBody = multipartBuilder.build()
 
-                val response = propertyApi.createProperty(multipartBody)
+                val response = propertyApi.createPropertyWithImages(multipartBody)
 
                 if (response.isSuccessful) {
                     val createdProperty = response.body()?.data
