@@ -145,11 +145,12 @@ class LoginActivity : AppCompatActivity() {
                             val userProfile = baseResponse.data
                             Log.d("LoginActivity", "Successfully fetched user profile: $userProfile")
 
-                            // 更新SharedPreferences中的所有用户资料
+                            // 使用UserManager来保存用户信息
+                            UserManager.init(this@LoginActivity)
+                            UserManager.setCurrentUser(userProfile.id, userProfile.username)
+                            
+                            // 更新SharedPreferences中的其他用户资料
                             sharedPreferences.edit().apply {
-                                putBoolean("is_logged_in", true)
-                                putString("user_id", userProfile.id.toString())
-                                putString("username", userProfile.username)
                                 putString("nickname", userProfile.nickname)
                                 putString("email", userProfile.email)
                                 putString("bio", userProfile.bio)
