@@ -2,12 +2,17 @@ package com.iss.ui.detail
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.ImageView
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.RatingBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -16,6 +21,7 @@ import com.iss.PredActivity
 import com.iss.R
 import androidx.viewpager2.widget.ViewPager2
 import com.iss.api.PropertyApi
+import com.iss.model.CommentRequest
 import com.iss.model.Property
 import com.iss.model.PropertyImage
 import com.iss.network.NetworkService
@@ -55,6 +61,13 @@ class PropertyDetailFragment : Fragment() {
     private var loadedProperty: Property? = null // New: To store the loaded property object
     private lateinit var imageAdapter: PropertyImageAdapter
     private var propertyImages: List<PropertyImage> = emptyList()
+
+    // 1. 新增视图组件
+    private lateinit var commentEditText: EditText
+    private lateinit var ratingBar: RatingBar
+    private lateinit var btnSubmitComment: Button
+    private lateinit var commentsContainer: LinearLayout
+    private lateinit var averageRatingText: TextView
 
     private lateinit var btnViewMap: Button
 
@@ -109,6 +122,83 @@ class PropertyDetailFragment : Fragment() {
         } else {
             showError("Invalid property ID")
         }
+
+        btnSubmitComment.setOnClickListener {
+            val content = commentEditText.text.toString().trim()
+            val rating = ratingBar.rating.toInt()
+
+            if (content.isNotEmpty() && rating > 0 && propertyId != -1L) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    try {
+                        val commentApi = NetworkService.commentApi
+
+                        // 使用干净请求体：CommentRequest，而非 Comment！
+                        val comment = CommentRequest(
+                            content = content,
+                            rating = rating,
+                            propertyId = propertyId
+                        )
+
+                        val response = commentApi.submitComment(comment)
+
+                        if (response.isSuccessful) {
+                            Toast.makeText(requireContext(), "Comment submitted", Toast.LENGTH_SHORT).show()
+
+                            // 清空 UI
+                            commentEditText.text.clear()
+                            ratingBar.rating = 0f
+
+                            // 可选：延迟 500ms，等待后端数据入库
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                loadComments(propertyId)
+                            }, 500)
+
+                        } else {
+                            Toast.makeText(requireContext(), "Failed to submit", Toast.LENGTH_SHORT).show()
+                            Log.e("CommentSubmit", "Error body: ${response.errorBody()?.string()}")
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Log.e("CommentSubmit", "Exception: ${e.message}", e)
+                    }
+                }
+            } else {
+                Toast.makeText(requireContext(), "Please enter comment and rating", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    }
+
+    private fun loadComments(propertyId: Long) {
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val commentApi = NetworkService.commentApi
+                val response = commentApi.getAllComments(propertyId)
+                if (response.isSuccessful) {
+                    val comments = response.body() ?: emptyList()
+
+                    // 显示平均评分
+                    val avgResponse = commentApi.getAverageRating(propertyId)
+                    if (avgResponse.isSuccessful) {
+                        val avg = avgResponse.body() ?: 0.0
+                        averageRatingText.text = "Average Rating: %.1f".format(avg)
+                    }
+
+                    // 清空并显示评论
+                    commentsContainer.removeAllViews()
+                    for (comment in comments) {
+                        val textView = TextView(requireContext()).apply {
+                            text = "⭐ ${comment.rating} - ${comment.content}"
+                            setPadding(8, 8, 8, 8)
+                            setTextColor(resources.getColor(R.color.text_primary))
+                        }
+                        commentsContainer.addView(textView)
+                    }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Failed to load comments", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun initViews(view: View) {
@@ -133,7 +223,14 @@ class PropertyDetailFragment : Fragment() {
         btnDelete = view.findViewById(R.id.btnDelete)
 
         btnViewMap = view.findViewById(R.id.btnViewMap)
+        // 2. 在 initViews(view) 中加上以下初始化代码
+        commentEditText = view.findViewById(R.id.commentEditText)
+        ratingBar = view.findViewById(R.id.ratingBar)
+        btnSubmitComment = view.findViewById(R.id.btnSubmitComment)
+        commentsContainer = view.findViewById(R.id.commentsContainer)
+        averageRatingText = view.findViewById(R.id.averageRatingText)
     }
+
 
     private fun setupViewPager() {
         imageAdapter = PropertyImageAdapter()
@@ -289,6 +386,7 @@ class PropertyDetailFragment : Fragment() {
                 showError("Error: ${e.message}")
             }
         }
+        loadComments(propertyId)
     }
 
     private fun displayPropertyDetail(property: Property) {
@@ -324,6 +422,9 @@ class PropertyDetailFragment : Fragment() {
     private fun hideError() {
         errorText.visibility = View.GONE
     }
+
+
+
 
     companion object {
         private const val ARG_PROPERTY_ID = "property_id"
