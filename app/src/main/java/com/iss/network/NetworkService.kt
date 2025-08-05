@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializer
 import com.iss.api.AuthApi
 import com.iss.api.CommentApi
+import com.iss.api.FavoriteApi
 import com.iss.api.PropertyApi
 import okhttp3.Cookie
 import okhttp3.CookieJar
@@ -99,6 +100,7 @@ object NetworkService {
         retrofit.create(CommentApi::class.java)
     }
 
+    val favoriteApi: FavoriteApi by lazy { retrofit.create(FavoriteApi::class.java) }
 
     val propertyApi: PropertyApi by lazy { retrofit.create(PropertyApi::class.java) }
     val authApi: AuthApi by lazy { retrofit.create(AuthApi::class.java) }

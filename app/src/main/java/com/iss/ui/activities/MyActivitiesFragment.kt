@@ -34,8 +34,7 @@ class MyActivitiesFragment : Fragment() {
         
         // 设置我的收藏按钮点击事件
         view.findViewById<View>(R.id.btnMyFavorites)?.setOnClickListener {
-            // TODO: 实现我的收藏功能
-            // findNavController().navigate(R.id.action_myActivitiesFragment_to_myFavoritesFragment)
+            findNavController().navigate(R.id.action_myActivitiesFragment_to_favoriteListFragment)
         }
     }
 } 

@@ -22,9 +22,11 @@ import com.iss.R
 import androidx.viewpager2.widget.ViewPager2
 import com.iss.api.PropertyApi
 import com.iss.model.CommentRequest
+import com.iss.model.Favorite
 import com.iss.model.Property
 import com.iss.model.PropertyImage
 import com.iss.network.NetworkService
+import com.iss.repository.FavoriteRepository
 import com.iss.repository.PropertyRepository
 import com.iss.ui.adapters.PropertyImageAdapter
 import kotlinx.coroutines.CoroutineScope
@@ -54,6 +56,7 @@ class PropertyDetailFragment : Fragment() {
     private lateinit var btnDelete: Button
 
     private val propertyRepository = PropertyRepository()
+    private val favoriteRepository = FavoriteRepository()
     private lateinit var propertyApi: PropertyApi
     private var propertyId: Long = -1
     private var isFromMyListings: Boolean = false // 标记是否来自My Listings
@@ -61,6 +64,11 @@ class PropertyDetailFragment : Fragment() {
     private var loadedProperty: Property? = null // New: To store the loaded property object
     private lateinit var imageAdapter: PropertyImageAdapter
     private var propertyImages: List<PropertyImage> = emptyList()
+    
+    // 收藏相关变量
+    private lateinit var btnFavorite: Button
+    private var isFavorite: Boolean = false
+    private var currentFavoriteId: Long? = null
 
     // 1. 新增视图组件
     private lateinit var commentEditText: EditText
@@ -102,6 +110,9 @@ class PropertyDetailFragment : Fragment() {
             }
         }
 
+        // 设置收藏按钮
+        setupFavoriteButton()
+        
         // 只有从My Listings进入时才设置编辑和删除按钮
         if (isFromMyListings) {
             setupActionButtons() // Set up edit and delete buttons
@@ -223,6 +234,7 @@ class PropertyDetailFragment : Fragment() {
         btnDelete = view.findViewById(R.id.btnDelete)
 
         btnViewMap = view.findViewById(R.id.btnViewMap)
+        btnFavorite = view.findViewById(R.id.btnFavorite)
         // 2. 在 initViews(view) 中加上以下初始化代码
         commentEditText = view.findViewById(R.id.commentEditText)
         ratingBar = view.findViewById(R.id.ratingBar)
@@ -423,8 +435,98 @@ class PropertyDetailFragment : Fragment() {
         errorText.visibility = View.GONE
     }
 
+    // 收藏相关方法
+    private fun setupFavoriteButton() {
+        btnFavorite.setOnClickListener {
+            if (isFavorite) {
+                removeFavorite()
+            } else {
+                addFavorite()
+            }
+        }
+        
+        // 检查当前房源的收藏状态
+        checkFavoriteStatus()
+    }
 
+    private fun checkFavoriteStatus() {
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val result = favoriteRepository.isFavorite(propertyId)
+                result.fold(
+                    onSuccess = { favorite ->
+                        isFavorite = favorite
+                        updateFavoriteButtonUI()
+                    },
+                    onFailure = { exception ->
+                        Log.e("Favorite", "Failed to check favorite status: ${exception.message}")
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e("Favorite", "Exception checking favorite status", e)
+            }
+        }
+    }
 
+    private fun addFavorite() {
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val result = favoriteRepository.addFavorite(propertyId)
+                result.fold(
+                    onSuccess = { favorite ->
+                        isFavorite = true
+                        currentFavoriteId = favorite.id
+                        updateFavoriteButtonUI()
+                        Toast.makeText(requireContext(), "Added to favorites", Toast.LENGTH_SHORT).show()
+                    },
+                    onFailure = { exception ->
+                        Toast.makeText(requireContext(), "Failed to add favorite: ${exception.message}", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun removeFavorite() {
+        currentFavoriteId?.let { favoriteId ->
+            CoroutineScope(Dispatchers.Main).launch {
+                try {
+                    val result = favoriteRepository.removeFavorite(favoriteId)
+                    result.fold(
+                        onSuccess = { success ->
+                            if (success) {
+                                isFavorite = false
+                                currentFavoriteId = null
+                                updateFavoriteButtonUI()
+                                Toast.makeText(requireContext(), "Removed from favorites", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(requireContext(), "Failed to remove from favorites", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        onFailure = { exception ->
+                            Toast.makeText(requireContext(), "Failed to remove favorite: ${exception.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                } catch (e: Exception) {
+                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } ?: run {
+            Toast.makeText(requireContext(), "Favorite ID not found", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun updateFavoriteButtonUI() {
+        if (isFavorite) {
+            btnFavorite.text = "❤ Favorited"
+            btnFavorite.setBackgroundColor(resources.getColor(R.color.error, null))
+        } else {
+            btnFavorite.text = "❤ Favorite"
+            btnFavorite.setBackgroundColor(resources.getColor(R.color.primary, null))
+        }
+    }
 
     companion object {
         private const val ARG_PROPERTY_ID = "property_id"
