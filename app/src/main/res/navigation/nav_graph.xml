@@ -45,6 +45,9 @@
         <action
             android:id="@+id/action_myActivitiesFragment_to_myListingsFragment"
             app:destination="@id/myListingsFragment" />
+        <action
+            android:id="@+id/action_myActivitiesFragment_to_favoriteListFragment"
+            app:destination="@id/favoriteListFragment" />
     </fragment>
     
     <fragment
@@ -60,6 +63,16 @@
         tools:layout="@layout/fragment_my_listings">
         <action
             android:id="@+id/action_myListingsFragment_to_propertyDetailFragment"
+            app:destination="@id/propertyDetailFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/favoriteListFragment"
+        android:name="com.iss.ui.favorite.FavoriteListFragment"
+        android:label="My Favorites"
+        tools:layout="@layout/fragment_favorite_list">
+        <action
+            android:id="@+id/action_favoriteListFragment_to_propertyDetailFragment"
             app:destination="@id/propertyDetailFragment" />
     </fragment>
     
