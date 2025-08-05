@@ -81,7 +81,7 @@ class UserProfileFragment : Fragment() {
         // ====================================================================
         // 添加日志: 检查 SharedPreferences 中的用户数据
         // ====================================================================
-        val storedUserId = sharedPreferences.getString("user_id", null)
+        val storedUserId = sharedPreferences.getLong("user_id", -1L)
         val storedUsername = sharedPreferences.getString("username", "Guest")
         val storedNickname = sharedPreferences.getString("nickname", "")
         val storedEmail = sharedPreferences.getString("email", "")
