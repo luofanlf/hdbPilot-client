@@ -18,5 +18,12 @@ class MapMarkerClusterRenderer(
             .title(item.title)
             .snippet(item.snippet)
     }
+
+
+    override fun onClusterItemRendered(item: PropertyClusterItem, marker: com.google.android.gms.maps.model.Marker) {
+        super.onClusterItemRendered(item, marker)
+        marker.tag = item
+    }
 }
+
 
