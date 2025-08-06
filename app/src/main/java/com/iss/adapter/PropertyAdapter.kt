@@ -57,7 +57,7 @@ class PropertyAdapter(
         holder.flatModelText.text = property.flatModel
         
         // 加载房源缩略图
-        loadPropertyThumbnail(holder.propertyImage, property.id)
+        loadPropertyThumbnail(holder.propertyImage, property)
         
         // 设置点击事件
         holder.itemView.setOnClickListener {
@@ -65,51 +65,20 @@ class PropertyAdapter(
         }
     }
 
-    private fun loadPropertyThumbnail(imageView: ImageView, propertyId: Long) {
-        // 检查缓存
-        val cachedImageUrl = imageCache[propertyId]
-        if (cachedImageUrl != null) {
+    private fun loadPropertyThumbnail(imageView: ImageView, property: Property) {
+        // 使用Property对象中的imageList
+        val firstImageUrl = property.firstImageUrl
+        
+        if (!firstImageUrl.isNullOrEmpty()) {
             Glide.with(imageView.context)
-                .load(cachedImageUrl)
+                .load(firstImageUrl)
                 .placeholder(R.drawable.ic_property_placeholder)
                 .error(R.drawable.ic_property_placeholder)
                 .centerCrop()
                 .into(imageView)
-            return
-        }
-        
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                val response = propertyApi.getPropertyImages(propertyId)
-                
-                if (response.isSuccessful) {
-                    val images = response.body()?.data ?: emptyList()
-                    if (images.isNotEmpty()) {
-                        // 使用第一张图片作为缩略图
-                        val firstImage = images.first()
-                        val imageUrl = firstImage.imageUrl
-                        
-                        // 缓存图片URL
-                        imageCache[propertyId] = imageUrl
-                        
-                        Glide.with(imageView.context)
-                            .load(imageUrl)
-                            .placeholder(R.drawable.ic_property_placeholder)
-                            .error(R.drawable.ic_property_placeholder)
-                            .centerCrop()
-                            .into(imageView)
-                    } else {
-                        // 没有图片时显示占位符
-                        imageView.setImageResource(R.drawable.ic_property_placeholder)
-                    }
-                } else {
-                    // 加载失败时显示占位符
-                    imageView.setImageResource(R.drawable.ic_property_placeholder)
-                }
-            } catch (e: Exception) {
-                // 异常时显示占位符
-                imageView.setImageResource(R.drawable.ic_property_placeholder)
-            }
+        } else {
+            // 没有图片时显示占位符
+            imageView.setImageResource(R.drawable.ic_property_placeholder)
         }
     }
 

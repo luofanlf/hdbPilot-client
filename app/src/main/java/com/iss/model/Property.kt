@@ -23,7 +23,7 @@ data class Property(
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
     val imageUrl: String? = null,
-    val imageList: List<String>? = null, // 后端返回的imageList字段
+    val imageList: List<PropertyImage>? = null, // 更新为PropertyImage列表
 
     //for map
     @Transient
@@ -51,4 +51,8 @@ data class Property(
 
     val floorInfo: String
         get() = "Level $storey" // 这个'storey'是您XML中显示的，与'storeyRange'不同，请注意区分
+    
+    // 获取第一张图片的URL
+    val firstImageUrl: String?
+        get() = imageList?.firstOrNull()?.imageUrl
 }

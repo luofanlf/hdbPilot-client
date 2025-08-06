@@ -265,29 +265,13 @@ class PropertyDetailFragment : Fragment() {
         }
     }
 
-    private fun loadPropertyImages(propertyId: Long) {
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                val response = propertyApi.getPropertyImages(propertyId)
-                
-                if (response.isSuccessful) {
-                    propertyImages = response.body()?.data ?: emptyList()
-                    imageAdapter.updateImages(propertyImages)
-                    
-                    // 更新图片计数器
-                    if (propertyImages.isNotEmpty()) {
-                        updateImageCounter(0)
-                    } else {
-                        imageCounterText.visibility = View.GONE
-                    }
-                } else {
-                    // 如果获取图片失败，隐藏计数器
-                    imageCounterText.visibility = View.GONE
-                }
-            } catch (e: Exception) {
-                // 如果获取图片失败，隐藏计数器
-                imageCounterText.visibility = View.GONE
-            }
+    private fun loadPropertyImagesFromProperty(property: Property) {
+        propertyImages = property.imageList ?: emptyList()
+        imageAdapter.updateImages(propertyImages)
+        if (propertyImages.isNotEmpty()) {
+            updateImageCounter(0)
+        } else {
+            imageCounterText.visibility = View.GONE
         }
     }
 
@@ -383,8 +367,8 @@ class PropertyDetailFragment : Fragment() {
                         showLoading(false)
                         displayPropertyDetail(property)
                         
-                        // 加载房源图片
-                        loadPropertyImages(id)
+                        // 使用Property对象中的imageList
+                        loadPropertyImagesFromProperty(property)
                     },
                     onFailure = { exception ->
                         android.util.Log.e("PropertyDetailFragment", "Failed to load property: ${exception.message}")
