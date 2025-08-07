@@ -6,6 +6,8 @@ import ai.onnxruntime.OrtSession
 import android.app.DatePickerDialog
 import android.content.Context
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
@@ -84,7 +86,7 @@ class PredActivity : AppCompatActivity() {
         spinnerStoreyRange = findViewById(R.id.spinnerStoreyRange)
         etRemainingLease = findViewById(R.id.etRemainingLease)
         etMonth = findViewById(R.id.etMonth)
-        etLeaseCommenceDate = findViewById(R.id.etLeaseCommenceDate) // No longer a date picker target
+        etLeaseCommenceDate = findViewById(R.id.etLeaseCommenceDate) // This will now be a regular EditText
         btnPredict = findViewById(R.id.btnPredict)
         tvResult = findViewById(R.id.tvResult)
 
@@ -97,6 +99,17 @@ class PredActivity : AppCompatActivity() {
         // Setup Date Picker for Month input only
         setupMonthDatePicker()
         // Removed setupLeaseCommenceDatePicker() call
+
+        // Add TextWatchers to etMonth and etRemainingLease to automatically update etLeaseCommenceDate
+        val textWatcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                updateLeaseCommenceDate()
+            }
+        }
+        etMonth.addTextChangedListener(textWatcher)
+        etRemainingLease.addTextChangedListener(textWatcher)
 
         // Check for incoming property data from Intent
         val incomingFloorArea = intent.getFloatExtra("PROPERTY_FLOOR_AREA_SQM", -1.0f)
@@ -117,7 +130,7 @@ class PredActivity : AppCompatActivity() {
             setSpinnerSelection(spinnerStoreyRange, incomingStoreyRange, R.array.storey_range_options)
             etRemainingLease.setText(incomingRemainingLease)
             etMonth.setText(incomingMonth)
-            etLeaseCommenceDate.setText(incomingLeaseCommenceDate.toString()) // Set as regular text
+            // The leaseCommenceDate will be calculated automatically by the TextWatchers
         } else {
             // Set default test input if no incoming data
             etFloorArea.setText("95.0")
@@ -125,10 +138,12 @@ class PredActivity : AppCompatActivity() {
             setSpinnerSelection(spinnerFlatType, "4 ROOM", R.array.flat_type_options)
             setSpinnerSelection(spinnerFlatModel, "IMPROVED", R.array.flat_model_options)
             setSpinnerSelection(spinnerStoreyRange, "07 TO 09", R.array.storey_range_options)
-            etRemainingLease.setText("75 years 00 months")
-            etMonth.setText("2019-06")
-            etLeaseCommenceDate.setText("1990") // Set as regular text
+            etRemainingLease.setText("75") // Use a cleaner default value for parsing
+            etMonth.setText("2019") // Use a cleaner default value for parsing
         }
+
+        // Initial calculation to set the default value
+        updateLeaseCommenceDate()
 
         GlobalScope.launch(Dispatchers.IO) {
             Log.d("ONNXRT_DEBUG", "Starting asynchronous ONNX model loading...")
@@ -137,7 +152,7 @@ class PredActivity : AppCompatActivity() {
                 val sessionOptions = OrtSession.SessionOptions()
                 Log.d("ONNXRT_DEBUG", "OrtEnvironment created successfully.")
 
-                val modelPath = assetFilePath(applicationContext, "pred3.onnx")
+                val modelPath = assetFilePath(applicationContext, "onnx_pred.onnx")
                 Log.d("ONNXRT_DEBUG", "Model file path: $modelPath")
 
                 ortSession = ortEnvironment?.createSession(modelPath, sessionOptions)
@@ -207,7 +222,36 @@ class PredActivity : AppCompatActivity() {
         }
     }
 
-    // Removed setupLeaseCommenceDatePicker() function as it's no longer a DatePicker
+    /**
+     * Calculates and updates the etLeaseCommenceDate based on etMonth and etRemainingLease.
+     */
+    private fun updateLeaseCommenceDate() {
+        // Parse the year from the month string (e.g., "2019-06" -> 2019)
+        val monthYear = etMonth.text.toString().trim()
+        val year = try {
+            if (monthYear.length >= 4) monthYear.substring(0, 4).toInt() else null
+        } catch (e: NumberFormatException) {
+            null
+        }
+
+        // Parse the years from the remaining lease string (e.g., "75 years 00 months" -> 75)
+        val remainingLeaseStr = etRemainingLease.text.toString().trim()
+        val remainingLeaseYears = try {
+            // A simplified approach for parsing the years part
+            remainingLeaseStr.split(" ")[0].toIntOrNull()
+        } catch (e: Exception) {
+            null
+        }
+
+        // Perform the calculation and set the result
+        if (year != null && remainingLeaseYears != null) {
+            val leaseCommenceDate = year + remainingLeaseYears - 99
+            etLeaseCommenceDate.setText(leaseCommenceDate.toString())
+        } else {
+            // Clear the field or show an error if the input is invalid
+            etLeaseCommenceDate.setText("")
+        }
+    }
 
 
     private fun performPrediction() {
@@ -218,6 +262,9 @@ class PredActivity : AppCompatActivity() {
             return
         }
 
+        // Ensure the lease commencement date is up-to-date before prediction
+        updateLeaseCommenceDate()
+
         val floorAreaStr = etFloorArea.text.toString()
         val town = spinnerTown.text.toString().trim().uppercase()
         val flatType = spinnerFlatType.text.toString().trim().uppercase()
@@ -225,7 +272,7 @@ class PredActivity : AppCompatActivity() {
         val storeyRange = spinnerStoreyRange.text.toString().trim().uppercase()
         val remainingLease = etRemainingLease.text.toString().trim()
         val month = etMonth.text.toString().trim()
-        val leaseCommenceDateStr = etLeaseCommenceDate.text.toString().trim() // Get from EditText
+        val leaseCommenceDateStr = etLeaseCommenceDate.text.toString().trim()
 
         if (floorAreaStr.isEmpty() || town.isEmpty() || flatType.isEmpty() || flatModel.isEmpty() ||
             storeyRange.isEmpty() || remainingLease.isEmpty() || month.isEmpty() || leaseCommenceDateStr.isEmpty()) {
