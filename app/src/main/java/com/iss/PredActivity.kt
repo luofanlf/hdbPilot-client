@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
+import android.view.MotionEvent
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
@@ -44,7 +45,7 @@ class PredActivity : AppCompatActivity() {
     private lateinit var spinnerStoreyRange: AutoCompleteTextView
     private lateinit var etRemainingLease: EditText
     private lateinit var etMonth: EditText
-    private lateinit var etLeaseCommenceDate: EditText // This will now be a regular EditText
+    private lateinit var etLeaseCommenceDate: EditText
     private lateinit var btnPredict: Button
     private lateinit var tvResult: TextView
 
@@ -86,7 +87,7 @@ class PredActivity : AppCompatActivity() {
         spinnerStoreyRange = findViewById(R.id.spinnerStoreyRange)
         etRemainingLease = findViewById(R.id.etRemainingLease)
         etMonth = findViewById(R.id.etMonth)
-        etLeaseCommenceDate = findViewById(R.id.etLeaseCommenceDate) // This will now be a regular EditText
+        etLeaseCommenceDate = findViewById(R.id.etLeaseCommenceDate)
         btnPredict = findViewById(R.id.btnPredict)
         tvResult = findViewById(R.id.tvResult)
 
@@ -98,18 +99,17 @@ class PredActivity : AppCompatActivity() {
 
         // Setup Date Picker for Month input only
         setupMonthDatePicker()
-        // Removed setupLeaseCommenceDatePicker() call
 
-        // Add TextWatchers to etMonth and etRemainingLease to automatically update etLeaseCommenceDate
+        // Add TextWatchers to etMonth and etLeaseCommenceDate to automatically update etRemainingLease
         val textWatcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
-                updateLeaseCommenceDate()
+                updateRemainingLease()
             }
         }
         etMonth.addTextChangedListener(textWatcher)
-        etRemainingLease.addTextChangedListener(textWatcher)
+        etLeaseCommenceDate.addTextChangedListener(textWatcher)
 
         // Check for incoming property data from Intent
         val incomingFloorArea = intent.getFloatExtra("PROPERTY_FLOOR_AREA_SQM", -1.0f)
@@ -130,7 +130,7 @@ class PredActivity : AppCompatActivity() {
             setSpinnerSelection(spinnerStoreyRange, incomingStoreyRange, R.array.storey_range_options)
             etRemainingLease.setText(incomingRemainingLease)
             etMonth.setText(incomingMonth)
-            // The leaseCommenceDate will be calculated automatically by the TextWatchers
+            etLeaseCommenceDate.setText(incomingLeaseCommenceDate.toString())
         } else {
             // Set default test input if no incoming data
             etFloorArea.setText("95.0")
@@ -138,12 +138,13 @@ class PredActivity : AppCompatActivity() {
             setSpinnerSelection(spinnerFlatType, "4 ROOM", R.array.flat_type_options)
             setSpinnerSelection(spinnerFlatModel, "IMPROVED", R.array.flat_model_options)
             setSpinnerSelection(spinnerStoreyRange, "07 TO 09", R.array.storey_range_options)
-            etRemainingLease.setText("75") // Use a cleaner default value for parsing
-            etMonth.setText("2019") // Use a cleaner default value for parsing
+            etRemainingLease.setText("75")
+            etMonth.setText("2019-06")
+            etLeaseCommenceDate.setText("1990")
         }
 
         // Initial calculation to set the default value
-        updateLeaseCommenceDate()
+        updateRemainingLease()
 
         GlobalScope.launch(Dispatchers.IO) {
             Log.d("ONNXRT_DEBUG", "Starting asynchronous ONNX model loading...")
@@ -223,33 +224,43 @@ class PredActivity : AppCompatActivity() {
     }
 
     /**
-     * Calculates and updates the etLeaseCommenceDate based on etMonth and etRemainingLease.
+     * Calculates and updates the etRemainingLease based on etMonth and etLeaseCommenceDate.
+     * The remaining lease is calculated as (Year of Month + 99) - Lease Commence Year.
+     * If the result is not within 1-99, the remaining lease field is cleared.
      */
-    private fun updateLeaseCommenceDate() {
+    private fun updateRemainingLease() {
         // Parse the year from the month string (e.g., "2019-06" -> 2019)
         val monthYear = etMonth.text.toString().trim()
-        val year = try {
+        val currentYear = try {
             if (monthYear.length >= 4) monthYear.substring(0, 4).toInt() else null
         } catch (e: NumberFormatException) {
             null
         }
 
-        // Parse the years from the remaining lease string (e.g., "75 years 00 months" -> 75)
-        val remainingLeaseStr = etRemainingLease.text.toString().trim()
-        val remainingLeaseYears = try {
-            // A simplified approach for parsing the years part
-            remainingLeaseStr.split(" ")[0].toIntOrNull()
+        // Get the years from the lease commence date input
+        val leaseCommenceDateStr = etLeaseCommenceDate.text.toString().trim()
+        val leaseCommenceDate = try {
+            leaseCommenceDateStr.toIntOrNull()
         } catch (e: Exception) {
             null
         }
 
         // Perform the calculation and set the result
-        if (year != null && remainingLeaseYears != null) {
-            val leaseCommenceDate = year + remainingLeaseYears - 99
-            etLeaseCommenceDate.setText(leaseCommenceDate.toString())
+        if (currentYear != null && leaseCommenceDate != null) {
+            // The formula is: 99 - (Current Year - Lease Commence Year)
+            val remainingLease = 99 - (currentYear - leaseCommenceDate)
+
+            // Check if the calculated value is within the valid range (1-99)
+            if (remainingLease >= 1 && remainingLease <= 99) {
+                etRemainingLease.setText(remainingLease.toString())
+            } else {
+                // If it's outside the range, clear the field
+                etRemainingLease.setText("")
+
+            }
         } else {
-            // Clear the field or show an error if the input is invalid
-            etLeaseCommenceDate.setText("")
+            // Clear the fields if any of the inputs are invalid
+            etRemainingLease.setText("")
         }
     }
 
@@ -262,8 +273,8 @@ class PredActivity : AppCompatActivity() {
             return
         }
 
-        // Ensure the lease commencement date is up-to-date before prediction
-        updateLeaseCommenceDate()
+        // Ensure the remaining lease is up-to-date before prediction
+        updateRemainingLease()
 
         val floorAreaStr = etFloorArea.text.toString()
         val town = spinnerTown.text.toString().trim().uppercase()
@@ -546,29 +557,16 @@ class PredActivity : AppCompatActivity() {
         return predictedRange
     }
 
+
     override fun onDestroy() {
         super.onDestroy()
-        try {
-            ortSession?.close()
-            ortEnvironment?.close()
-            Log.d("ONNXRT_DEBUG", "ONNX Session and Environment closed.")
-        } catch (e: Exception) {
-            Log.e("ONNXRT", "Failed to close ONNX resources: ${e.message}", e)
-            Log.d("ONNXRT_DEBUG", "ONNX resource closing exception: ${e.message}")
-        }
-        // 关闭ONNX资源（你已有）
-        try {
-            ortSession?.close()
-            ortEnvironment?.close()
-        } catch (e: Exception) {
-            Log.e("ONNXRT", "Failed to close ONNX resources: ${e.message}", e)
-        }
 
-        // 删除复制的模型文件
-        val modelFile = File(filesDir, "pred3.onnx")
-        if (modelFile.exists()) {
-            val deleted = modelFile.delete()
-            Log.d("ONNXRT_DEBUG", "Deleted model file from private storage: $deleted")
+        val filesDir = applicationContext.filesDir
+        val onnxFiles = filesDir.listFiles { _, name -> name.endsWith(".onnx") }
+
+        onnxFiles?.forEach { file ->
+            val deleted = file.delete()
+            Log.d("ONNX_DELETE", "Deleting ${file.name}: $deleted")
         }
     }
 }
