@@ -61,9 +61,9 @@ class PredActivity : AppCompatActivity() {
     )
 
     // --- SCALER_MEANS ---
-    private val SCALER_MEANS = floatArrayOf(94.78112071222833f, 2025.0f, 26.500916470280178f, 8.842301649646505f, 72.77543205027494f)
+    private val SCALER_MEANS = floatArrayOf(96.84845448249546f, 2021.0396072722476f, 28.642436834244954f, 8.76201715828304f, 74.36137258412286f)
     // --- SCALER_STDS ---
-    private val SCALER_STDS = floatArrayOf(23.985591346684732f, 1.0f, 15.355141601550077f, 5.95153191816619f, 15.393784093648323f)
+    private val SCALER_STDS = floatArrayOf(24.033157565151072f, 2.4350528700044345f, 14.250161536007143f, 5.9354372746999395f, 14.170572025907596f)
 
     // --- ONEHOT_CATEGORIES ---
     private val ONEHOT_CATEGORIES = listOf(
@@ -137,7 +137,7 @@ class PredActivity : AppCompatActivity() {
                 val sessionOptions = OrtSession.SessionOptions()
                 Log.d("ONNXRT_DEBUG", "OrtEnvironment created successfully.")
 
-                val modelPath = assetFilePath(applicationContext, "onnx_pred.onnx")
+                val modelPath = assetFilePath(applicationContext, "pred3.onnx")
                 Log.d("ONNXRT_DEBUG", "Model file path: $modelPath")
 
                 ortSession = ortEnvironment?.createSession(modelPath, sessionOptions)
@@ -508,6 +508,20 @@ class PredActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.e("ONNXRT", "Failed to close ONNX resources: ${e.message}", e)
             Log.d("ONNXRT_DEBUG", "ONNX resource closing exception: ${e.message}")
+        }
+        // 关闭ONNX资源（你已有）
+        try {
+            ortSession?.close()
+            ortEnvironment?.close()
+        } catch (e: Exception) {
+            Log.e("ONNXRT", "Failed to close ONNX resources: ${e.message}", e)
+        }
+
+        // 删除复制的模型文件
+        val modelFile = File(filesDir, "pred3.onnx")
+        if (modelFile.exists()) {
+            val deleted = modelFile.delete()
+            Log.d("ONNXRT_DEBUG", "Deleted model file from private storage: $deleted")
         }
     }
 }
