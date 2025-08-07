@@ -188,7 +188,8 @@ class PropertyDetailFragment : Fragment() {
                     commentsContainer.removeAllViews()
                     for (comment in comments) {
                         val textView = TextView(requireContext()).apply {
-                            text = "⭐ ${comment.rating} - ${comment.content}"
+                            // 这里加上 userId
+                            text = "用户ID: ${comment.userId}  ⭐ ${comment.rating} - ${comment.content}"
                             setPadding(8, 8, 8, 8)
                             setTextColor(resources.getColor(R.color.text_primary))
                         }
