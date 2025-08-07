@@ -5,6 +5,7 @@ data class Comment private constructor(
     val content: String,
     val rating: Int,
     val createdAt: String?,
-    val propertyId: Long
+    val propertyId: Long,
+    val userId: Long // 新增
 )
 
