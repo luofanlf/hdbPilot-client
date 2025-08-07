@@ -60,9 +60,10 @@ class PredActivity : AppCompatActivity() {
         "> $950,000"
     )
 
-    private val SCALER_MEANS = floatArrayOf(96.8740658027681f, 2020.2176078135776f, 29.45240004490562f, 8.673656439946754f, 74.294599230724f)
+    // --- SCALER_MEANS ---
+    private val SCALER_MEANS = floatArrayOf(94.78112071222833f, 2025.0f, 26.500916470280178f, 8.842301649646505f, 72.77543205027494f)
     // --- SCALER_STDS ---
-    private val SCALER_STDS = floatArrayOf(24.057867459941118f, 2.9905908513913864f, 13.933463465912096f, 5.855236447166976f, 13.732032823995471f)
+    private val SCALER_STDS = floatArrayOf(23.985591346684732f, 1.0f, 15.355141601550077f, 5.95153191816619f, 15.393784093648323f)
 
     // --- ONEHOT_CATEGORIES ---
     private val ONEHOT_CATEGORIES = listOf(
@@ -136,7 +137,7 @@ class PredActivity : AppCompatActivity() {
                 val sessionOptions = OrtSession.SessionOptions()
                 Log.d("ONNXRT_DEBUG", "OrtEnvironment created successfully.")
 
-                val modelPath = assetFilePath(applicationContext, "123.onnx")
+                val modelPath = assetFilePath(applicationContext, "onnx_pred.onnx")
                 Log.d("ONNXRT_DEBUG", "Model file path: $modelPath")
 
                 ortSession = ortEnvironment?.createSession(modelPath, sessionOptions)
