@@ -21,6 +21,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.activity.result.contract.ActivityResultContracts
+import android.net.Uri
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
+import java.io.FileOutputStream
+import kotlinx.coroutines.delay
 
 class UserProfileFragment : Fragment() {
 
@@ -34,8 +42,15 @@ class UserProfileFragment : Fragment() {
     private lateinit var etConfirmPassword: TextInputEditText
     private lateinit var btnSave: Button
     private lateinit var btnLogout: Button
+    private var ivAvatarView: de.hdodenhof.circleimageview.CircleImageView? = null
 
     private val authApi by lazy { NetworkService.authApi }
+
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            uploadAvatar(uri)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -59,6 +74,7 @@ class UserProfileFragment : Fragment() {
         etConfirmPassword = view.findViewById(R.id.etConfirmPassword)
         btnSave = view.findViewById(R.id.btnSave)
         btnLogout = view.findViewById(R.id.btnLogout)
+        ivAvatarView = view.findViewById(R.id.ivAvatar)
 
         // 2. 加载用户信息并填充到UI
         loadUserProfile()
@@ -73,20 +89,27 @@ class UserProfileFragment : Fragment() {
             Log.d("UserProfileFragment", "Logout button clicked. Performing logout.")
             performLogout()
         }
+
+        // 4. 点击头像选择图片
+        ivAvatarView?.setOnClickListener {
+            pickImageLauncher.launch("image/*")
+        }
     }
 
     private fun loadUserProfile() {
         val sharedPreferences = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
 
-        // ====================================================================
-        // 添加日志: 检查 SharedPreferences 中的用户数据
-        // ====================================================================
-        val storedUserId = sharedPreferences.getLong("user_id", -1L)
+        val storedUserId: Long = try {
+            sharedPreferences.getLong("user_id", -1L)
+        } catch (e: ClassCastException) {
+            sharedPreferences.getString("user_id", null)?.toLongOrNull() ?: -1L
+        }
         val storedUsername = sharedPreferences.getString("username", "Guest")
         val storedNickname = sharedPreferences.getString("nickname", "")
         val storedEmail = sharedPreferences.getString("email", "")
         val storedBio = sharedPreferences.getString("bio", "")
         val storedUserRole = sharedPreferences.getString("user_role", "User")
+        val storedAvatarUrl = sharedPreferences.getString("avatar_url", null)
 
         Log.d("UserProfileFragment", "Loading user profile from SharedPreferences:")
         Log.d("UserProfileFragment", "User ID: $storedUserId")
@@ -96,9 +119,8 @@ class UserProfileFragment : Fragment() {
         Log.d("UserProfileFragment", "Bio: $storedBio")
         Log.d("UserProfileFragment", "User Role: $storedUserRole")
 
-        // 如果用户ID或用户名为空，强制登出
-        if (storedUserId == null || storedUsername == "Guest") {
-            Log.w("UserProfileFragment", "User ID or username is null/default. Forcing logout.")
+        if (storedUserId == -1L || storedUsername.isNullOrBlank() || storedUsername == "Guest") {
+            Log.w("UserProfileFragment", "Invalid user in SharedPreferences. Forcing logout.")
             Toast.makeText(requireContext(), "User not found in local storage. Please log in again.", Toast.LENGTH_LONG).show()
             performLogout()
             return
@@ -109,6 +131,85 @@ class UserProfileFragment : Fragment() {
         etNickname.setText(storedNickname)
         etEmail.setText(storedEmail)
         etBio.setText(storedBio)
+
+        try {
+            val avatarView = view?.findViewById<de.hdodenhof.circleimageview.CircleImageView>(R.id.ivAvatar)
+            if (!storedAvatarUrl.isNullOrBlank() && avatarView != null) {
+                com.bumptech.glide.Glide.with(this)
+                    .load(storedAvatarUrl)
+                    .placeholder(R.drawable.ic_activities)
+                    .error(R.drawable.ic_activities)
+                    .signature(com.bumptech.glide.signature.ObjectKey(System.currentTimeMillis()))
+                    .into(avatarView)
+            }
+        } catch (e: Exception) {
+            Log.w("UserProfileFragment", "Failed to load avatar: ${e.message}")
+        }
+    }
+
+    private fun uploadAvatar(uri: Uri) {
+        val sp = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val userId: Long = try {
+            sp.getLong("user_id", -1L)
+        } catch (e: ClassCastException) {
+            sp.getString("user_id", null)?.toLongOrNull() ?: -1L
+        }
+        if (userId == -1L) {
+            Toast.makeText(requireContext(), "Invalid user. Please re-login.", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val tempFile = createTempFileFromUri(uri) ?: run {
+            Toast.makeText(requireContext(), "Cannot read selected image.", Toast.LENGTH_LONG).show()
+            return
+        }
+        val reqBody = tempFile.asRequestBody("image/*".toMediaTypeOrNull())
+        val part = MultipartBody.Part.createFormData("imageFile", tempFile.name, reqBody)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val resp = authApi.updateAvatar(userId, part)
+                withContext(Dispatchers.Main) {
+                    if (resp.isSuccessful && resp.body()?.code == 0 && !resp.body()?.data.isNullOrBlank()) {
+                        val newUrl = resp.body()!!.data!!
+                        val sp = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                        val committed = sp.edit().putString("avatar_url", newUrl).commit()
+                        Log.d("UserProfileFragment", "Avatar updated via API, newUrl=$newUrl, committed=$committed")
+                        // 立即刷新本页与顶部头像
+                        loadUserProfile()
+                        (activity as? com.iss.MainActivity)?.refreshUserAvatarIcon()
+                        Toast.makeText(requireContext(), "Avatar updated successfully.", Toast.LENGTH_SHORT).show()
+                    } else {
+                        val msg = resp.body()?.message ?: ("Upload failed: " + resp.code())
+                        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("UserProfileFragment", "Upload avatar failed: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "Network error: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            } finally {
+                tempFile.delete()
+            }
+        }
+    }
+
+    // 不再轮询
+    private fun refreshProfileAfterAvatarUpdated() { }
+
+    private fun createTempFileFromUri(uri: Uri): File? {
+        return try {
+            val input = requireContext().contentResolver.openInputStream(uri) ?: return null
+            val tempFile = File.createTempFile("avatar_", ".jpg", requireContext().cacheDir)
+            FileOutputStream(tempFile).use { output ->
+                input.copyTo(output)
+            }
+            tempFile
+        } catch (e: Exception) {
+            Log.e("UserProfileFragment", "createTempFileFromUri error: ${e.message}")
+            null
+        }
     }
 
     private fun updateUserProfile() {
@@ -116,7 +217,6 @@ class UserProfileFragment : Fragment() {
         val newPassword = etNewPassword.text.toString().trim()
         val confirmPassword = etConfirmPassword.text.toString().trim()
 
-        // 密码本地校验
         if (newPassword.isNotEmpty() || oldPassword.isNotEmpty() || confirmPassword.isNotEmpty()) {
             if (newPassword.length < 8) {
                 Toast.makeText(requireContext(), "New password must be at least 8 characters.", Toast.LENGTH_SHORT).show()
@@ -130,7 +230,6 @@ class UserProfileFragment : Fragment() {
             }
         }
 
-        // 创建请求体，只包含有修改的字段
         val request = UserUpdateRequest(
             newNickname = etNickname.text.toString().trim().takeIf { it.isNotBlank() },
             newEmail = etEmail.text.toString().trim().takeIf { it.isNotBlank() },
@@ -139,9 +238,6 @@ class UserProfileFragment : Fragment() {
             newPassword = newPassword.takeIf { it.isNotBlank() }
         )
 
-        // ====================================================================
-        // 添加日志: 打印即将发送的请求数据
-        // ====================================================================
         Log.d("UserProfileFragment", "Sending update profile request with:")
         Log.d("UserProfileFragment", "New Nickname: ${request.newNickname}")
         Log.d("UserProfileFragment", "New Email: ${request.newEmail}")
@@ -160,7 +256,6 @@ class UserProfileFragment : Fragment() {
                         val baseResponse = response.body()
                         Log.d("UserProfileFragment", "Response body received: ${baseResponse.toString()}")
 
-                        // 关键修改: 检查后端返回的错误信息
                         if (baseResponse?.code == 0) {
                             Toast.makeText(requireContext(), "Profile updated successfully!", Toast.LENGTH_SHORT).show()
                             Log.i("UserProfileFragment", "Profile updated successfully! Updating SharedPreferences.")
@@ -175,7 +270,6 @@ class UserProfileFragment : Fragment() {
                             etNewPassword.text?.clear()
                             etConfirmPassword.text?.clear()
                         } else if (baseResponse?.message?.contains("User not found", ignoreCase = true) == true || response.code() == 401) {
-                            // 关键修改: 如果后端返回“用户不存在”或401错误，显示特定提示并登出
                             showSessionExpiredDialog()
                         }
                         else {
@@ -184,7 +278,6 @@ class UserProfileFragment : Fragment() {
                             Log.w("UserProfileFragment", "Update failed due to backend logic: $errorMessage (Code: ${baseResponse?.code})")
                         }
                     } else if (response.code() == 401) {
-                        // 关键修改: 如果HTTP状态码是401，也显示特定提示并登出
                         showSessionExpiredDialog()
                     } else {
                         val errorBody = response.errorBody()?.string()
@@ -202,18 +295,17 @@ class UserProfileFragment : Fragment() {
         }
     }
 
-    // 关键修改: 新增方法，用于显示会话失效提示框
     private fun showSessionExpiredDialog() {
-        if (!isAdded) return // 防止 Fragment 未附加到 Activity 时崩溃
+        if (!isAdded) return
 
         AlertDialog.Builder(requireContext())
             .setTitle("Account Security Notification")
             .setMessage("You have been logged out for security reasons. Please log in again to verify your identity.")
             .setPositiveButton("Confirm") { dialog, _ ->
                 dialog.dismiss()
-                performLogout() // 点击确认后执行登出
+                performLogout()
             }
-            .setCancelable(false) // 不可取消
+            .setCancelable(false)
             .show()
     }
 

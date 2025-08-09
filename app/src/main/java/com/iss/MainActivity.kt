@@ -1,6 +1,10 @@
 package com.iss
 
 import android.content.Intent
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
@@ -9,6 +13,10 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
+import android.view.MenuItem
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.appbar.MaterialToolbar // 导入 MaterialToolbar
 import com.iss.ui.activities.UserProfileFragment // 导入你创建的 UserProfileFragment
@@ -38,6 +46,8 @@ class MainActivity : AppCompatActivity() {
         // 新增代码：获取 MaterialToolbar 并设置菜单项点击监听器
         // =================================================================
         val topAppBar = findViewById<MaterialToolbar>(R.id.topAppBar)
+        // 刷新右上角头像
+        refreshUserAvatarIcon()
         topAppBar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.action_user_profile -> {
@@ -88,4 +98,53 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        // 返回主界面或从其他页面返回时，刷新头像
+        refreshUserAvatarIcon()
+    }
+
+    fun refreshUserAvatarIcon() {
+        val topAppBar = findViewById<MaterialToolbar>(R.id.topAppBar)
+        val menuItem: MenuItem = topAppBar.menu.findItem(R.id.action_user_profile) ?: return
+        val prefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        prefs.reloadIfPossible()
+        val avatarUrl = prefs.getString("avatar_url", null)
+
+        if (avatarUrl.isNullOrBlank()) {
+            menuItem.setIcon(R.drawable.ic_activities)
+            return
+        }
+
+        val sizePx = (32f * resources.displayMetrics.density).toInt()
+        Glide.with(this)
+            .asBitmap()
+            .load(avatarUrl)
+            .circleCrop()
+            .signature(com.bumptech.glide.signature.ObjectKey(System.currentTimeMillis()))
+            .into(object : CustomTarget<Bitmap>(sizePx, sizePx) {
+                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                    val drawable = BitmapDrawable(resources, resource)
+                    menuItem.icon = drawable
+                    menuItem.icon?.setTintList(null) // 取消统一着色，保留原图
+                }
+
+                override fun onLoadCleared(placeholder: Drawable?) {
+                    // 无需处理
+                }
+
+                override fun onLoadFailed(errorDrawable: Drawable?) {
+                    super.onLoadFailed(errorDrawable)
+                    menuItem.setIcon(R.drawable.ic_activities)
+                }
+            })
+    }
+}
+
+private fun Context.getDefaultSharedPreferencesName(): String = "user_prefs"
+
+private fun android.content.SharedPreferences.reloadIfPossible() {
+    // 对于 MODE_PRIVATE 的 SP，apply 已经是异步写入磁盘；这里无强制刷新 API。
+    // 此方法保留占位，便于将来接入 DataStore 或多进程场景。
 }
