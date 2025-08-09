@@ -434,7 +434,7 @@ class AddPropertyFragment : Fragment() {
                     .addFormDataPart("topYear", selectedYear.toString())
                     .addFormDataPart("flatModel", selectedFlatModel)
                     .addFormDataPart("resalePrice", binding.etResalePrice.text.toString())
-                    .addFormDataPart("status", "available")
+                    .addFormDataPart("status", "pending")
 
                 // 添加图片文件
                 for (imageUri in selectedImages) {
