@@ -5,4 +5,5 @@ data class CommentRequest(
     val rating: Int,
     val propertyId: Long,
     val userId: Long
+
 )

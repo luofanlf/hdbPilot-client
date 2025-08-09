@@ -18,4 +18,6 @@ interface CommentApi {
 
     @GET("/api/comments/property/{propertyId}/with-username")
     suspend fun getCommentsWithUsername(@Path("propertyId") propertyId: Long): Response<List<CommentWithUsername>>
+
 }
+

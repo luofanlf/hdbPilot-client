@@ -65,7 +65,7 @@ class PropertyDetailFragment : Fragment() {
     private var loadedProperty: Property? = null // New: To store the loaded property object
     private lateinit var imageAdapter: PropertyImageAdapter
     private var propertyImages: List<PropertyImage> = emptyList()
-    
+
     // 收藏相关变量
     private lateinit var btnFavorite: Button
     private var isFavorite: Boolean = false
@@ -113,7 +113,7 @@ class PropertyDetailFragment : Fragment() {
 
         // 设置收藏按钮
         setupFavoriteButton()
-        
+
         // 只有从My Listings进入时才设置编辑和删除按钮
         if (isFromMyListings) {
             setupActionButtons() // Set up edit and delete buttons
@@ -269,7 +269,7 @@ class PropertyDetailFragment : Fragment() {
     private fun setupViewPager() {
         imageAdapter = PropertyImageAdapter()
         propertyImageViewPager.adapter = imageAdapter
-        
+
         // 设置页面切换监听器
         propertyImageViewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
@@ -363,7 +363,7 @@ class PropertyDetailFragment : Fragment() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val response = propertyApi.deleteProperty(property.id)
-                
+
                 if (response.isSuccessful && response.body()?.data == true) {
                     Toast.makeText(requireContext(), "Property deleted successfully", Toast.LENGTH_LONG).show()
                     // 返回上一页
@@ -388,7 +388,7 @@ class PropertyDetailFragment : Fragment() {
                         loadedProperty = property // Store the loaded property
                         showLoading(false)
                         displayPropertyDetail(property)
-                        
+
                         // 使用Property对象中的imageList
                         loadPropertyImagesFromProperty(property)
                     },
@@ -450,7 +450,7 @@ class PropertyDetailFragment : Fragment() {
                 addFavorite()
             }
         }
-        
+
         // 检查当前房源的收藏状态
         checkFavoriteStatus()
     }
@@ -547,4 +547,5 @@ class PropertyDetailFragment : Fragment() {
                 }
             }
     }
+
 }
