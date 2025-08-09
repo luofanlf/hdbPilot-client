@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.iss.R
 import com.iss.model.Favorite
-import com.iss.model.PropertyImage
+import android.util.Log
 
 class FavoriteAdapter(
     private val onFavoriteClick: (Favorite) -> Unit,
@@ -51,7 +51,7 @@ class FavoriteAdapter(
                 priceText.text = property.formattedResalePrice
 
                 // 加载房源图片
-                loadPropertyImage(property.id)
+                loadPropertyImage(favorite)
             }
 
             // 设置点击事件
@@ -65,10 +65,29 @@ class FavoriteAdapter(
             }
         }
 
-        private fun loadPropertyImage(propertyId: Long) {
-            // 这里可以加载房源的图片
-            // 暂时使用默认图片
-            propertyImageView.setImageResource(R.drawable.ic_house)
+        private fun loadPropertyImage(favorite: Favorite) {
+            // 添加调试日志
+            Log.d("FavoriteAdapter", "Loading image for favorite: ${favorite.id}")
+            Log.d("FavoriteAdapter", "Property: ${favorite.property}")
+            Log.d("FavoriteAdapter", "Property imageList: ${favorite.property?.imageList}")
+            Log.d("FavoriteAdapter", "First image URL: ${favorite.property?.firstImageUrl}")
+            
+            // 使用 Property 对象中的 imageList 来加载房源缩略图
+            val firstImageUrl = favorite.property?.firstImageUrl
+            
+            if (!firstImageUrl.isNullOrEmpty()) {
+                Log.d("FavoriteAdapter", "Loading actual image: $firstImageUrl")
+                Glide.with(propertyImageView.context)
+                    .load(firstImageUrl)
+                    .placeholder(R.drawable.ic_property_placeholder)
+                    .error(R.drawable.ic_property_placeholder)
+                    .centerCrop()
+                    .into(propertyImageView)
+            } else {
+                Log.d("FavoriteAdapter", "No image URL found, showing placeholder")
+                // 没有图片时显示占位符
+                propertyImageView.setImageResource(R.drawable.ic_property_placeholder)
+            }
         }
     }
 } 

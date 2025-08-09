@@ -448,15 +448,27 @@ class PropertyDetailFragment : Fragment() {
                 val result = favoriteRepository.isFavorite(propertyId)
                 result.fold(
                     onSuccess = { favorite ->
-                        isFavorite = favorite
+                        if (favorite != null) {
+                            isFavorite = true
+                            currentFavoriteId = favorite.id
+                        } else {
+                            isFavorite = false
+                            currentFavoriteId = null
+                        }
                         updateFavoriteButtonUI()
                     },
                     onFailure = { exception ->
                         Log.e("Favorite", "Failed to check favorite status: ${exception.message}")
+                        isFavorite = false
+                        currentFavoriteId = null
+                        updateFavoriteButtonUI()
                     }
                 )
             } catch (e: Exception) {
                 Log.e("Favorite", "Exception checking favorite status", e)
+                isFavorite = false
+                currentFavoriteId = null
+                updateFavoriteButtonUI()
             }
         }
     }
@@ -483,31 +495,28 @@ class PropertyDetailFragment : Fragment() {
     }
 
     private fun removeFavorite() {
-        currentFavoriteId?.let { favoriteId ->
-            CoroutineScope(Dispatchers.Main).launch {
-                try {
-                    val result = favoriteRepository.removeFavorite(favoriteId)
-                    result.fold(
-                        onSuccess = { success ->
-                            if (success) {
-                                isFavorite = false
-                                currentFavoriteId = null
-                                updateFavoriteButtonUI()
-                                Toast.makeText(requireContext(), "Removed from favorites", Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(requireContext(), "Failed to remove from favorites", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        onFailure = { exception ->
-                            Toast.makeText(requireContext(), "Failed to remove favorite: ${exception.message}", Toast.LENGTH_SHORT).show()
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                // 优先使用 propertyId 来取消收藏，避免 favoriteId 的问题
+                val result = favoriteRepository.removeFavoriteByPropertyId(propertyId)
+                result.fold(
+                    onSuccess = { success ->
+                        if (success) {
+                            isFavorite = false
+                            currentFavoriteId = null
+                            updateFavoriteButtonUI()
+                            Toast.makeText(requireContext(), "Removed from favorites", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(requireContext(), "Failed to remove from favorites", Toast.LENGTH_SHORT).show()
                         }
-                    )
-                } catch (e: Exception) {
-                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
+                    },
+                    onFailure = { exception ->
+                        Toast.makeText(requireContext(), "Failed to remove favorite: ${exception.message}", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-        } ?: run {
-            Toast.makeText(requireContext(), "Favorite ID not found", Toast.LENGTH_SHORT).show()
         }
     }
 

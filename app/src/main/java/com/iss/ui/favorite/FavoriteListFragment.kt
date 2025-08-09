@@ -76,6 +76,13 @@ class FavoriteListFragment : Fragment() {
                     onSuccess = { pageResponse ->
                         showLoading(false)
                         if (pageResponse.records.isNotEmpty()) {
+                            // 添加调试日志
+                            Log.d("FavoriteListFragment", "Received ${pageResponse.records.size} favorites")
+                            pageResponse.records.forEach { favorite ->
+                                Log.d("FavoriteListFragment", "Favorite ID: ${favorite.id}, Property: ${favorite.property}")
+                                Log.d("FavoriteListFragment", "Property imageList: ${favorite.property?.imageList}")
+                            }
+                            
                             favoriteAdapter.updateFavorites(pageResponse.records)
                             showContent()
                         } else {

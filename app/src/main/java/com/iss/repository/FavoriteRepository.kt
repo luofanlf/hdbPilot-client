@@ -53,6 +53,26 @@ class FavoriteRepository {
         }
     }
 
+    suspend fun removeFavoriteByPropertyId(propertyId: Long): Result<Boolean> = withContext(Dispatchers.IO) {
+        try {
+            val userId = UserManager.getCurrentUserId()
+            val response = favoriteApi.removeFavoriteByPropertyId(propertyId, userId)
+            
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.code == 0) {
+                    Result.success(body.data!!)
+                } else {
+                    Result.failure(Exception(body?.message ?: "Failed to remove favorite"))
+                }
+            } else {
+                Result.failure(Exception("Network request failed: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun getUserFavorites(pageNum: Int = 1, pageSize: Int = 10): Result<PageResponse<Favorite>> = withContext(Dispatchers.IO) {
         try {
             val userId = UserManager.getCurrentUserId()
@@ -73,7 +93,7 @@ class FavoriteRepository {
         }
     }
 
-    suspend fun isFavorite(propertyId: Long): Result<Boolean> = withContext(Dispatchers.IO) {
+    suspend fun isFavorite(propertyId: Long): Result<Favorite?> = withContext(Dispatchers.IO) {
         try {
             val userId = UserManager.getCurrentUserId()
             val response = favoriteApi.isFavorite(userId, propertyId)
@@ -81,7 +101,7 @@ class FavoriteRepository {
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body?.code == 0) {
-                    Result.success(body.data!!)
+                    Result.success(body.data)
                 } else {
                     Result.failure(Exception(body?.message ?: "Failed to check favorite status"))
                 }
