@@ -29,6 +29,7 @@ import com.iss.network.NetworkService
 import com.iss.repository.FavoriteRepository
 import com.iss.repository.PropertyRepository
 import com.iss.ui.adapters.PropertyImageAdapter
+import com.iss.util.SessionManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -137,6 +138,7 @@ class PropertyDetailFragment : Fragment() {
         btnSubmitComment.setOnClickListener {
             val content = commentEditText.text.toString().trim()
             val rating = ratingBar.rating.toInt()
+            val userId = SessionManager.getCurrentUserId(requireContext())
 
             if (content.isNotEmpty() && rating > 0 && propertyId != -1L) {
                 CoroutineScope(Dispatchers.Main).launch {
@@ -147,7 +149,8 @@ class PropertyDetailFragment : Fragment() {
                         val comment = CommentRequest(
                             content = content,
                             rating = rating,
-                            propertyId = propertyId
+                            propertyId = propertyId,
+                            userId = userId
                         )
 
                         val response = commentApi.submitComment(comment)
@@ -165,8 +168,25 @@ class PropertyDetailFragment : Fragment() {
                             }, 500)
 
                         } else {
-                            Toast.makeText(requireContext(), "Failed to submit", Toast.LENGTH_SHORT).show()
-                            Log.e("CommentSubmit", "Error body: ${response.errorBody()?.string()}")
+                            // 新增：解析后端返回的 message 字段
+                            val errorBody = response.errorBody()?.string()
+                            var message: String? = null
+                            if (!errorBody.isNullOrEmpty()) {
+                                try {
+                                    val json = org.json.JSONObject(errorBody)
+                                    message = json.optString("message")
+                                } catch (e: Exception) {
+                                    // ignore
+                                }
+                            }
+                            if (message == "You cannot comment on your own property.") {
+                                Toast.makeText(requireContext(), "You cannot comment on your own property.", Toast.LENGTH_SHORT).show()
+                            } else if (!message.isNullOrEmpty()) {
+                                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(requireContext(), "Failed to submit", Toast.LENGTH_SHORT).show()
+                            }
+                            Log.e("CommentSubmit", "Error body: $errorBody")
                         }
                     } catch (e: Exception) {
                         Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -184,7 +204,8 @@ class PropertyDetailFragment : Fragment() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val commentApi = NetworkService.commentApi
-                val response = commentApi.getAllComments(propertyId)
+                // 使用带用户名的新接口
+                val response = commentApi.getCommentsWithUsername(propertyId)
                 if (response.isSuccessful) {
                     val comments = response.body() ?: emptyList()
 
@@ -199,8 +220,8 @@ class PropertyDetailFragment : Fragment() {
                     commentsContainer.removeAllViews()
                     for (comment in comments) {
                         val textView = TextView(requireContext()).apply {
-                            // 这里加上 userId
-                            text = "用户ID: ${comment.userId}  ⭐ ${comment.rating} - ${comment.content}"
+                            // 展示 username 而不是 userId
+                            text = "${comment.username}  ⭐ ${comment.rating} - ${comment.content}"
                             setPadding(8, 8, 8, 8)
                             setTextColor(resources.getColor(R.color.text_primary))
                         }
