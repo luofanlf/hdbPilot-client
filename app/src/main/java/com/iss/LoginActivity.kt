@@ -148,7 +148,11 @@ class LoginActivity : AppCompatActivity() {
                             // 使用UserManager来保存用户信息
                             UserManager.init(this@LoginActivity)
                             UserManager.setCurrentUser(userProfile.id, userProfile.username)
-                            
+
+                            // ✅ 保存到 SharedPreferences
+                            val prefs = getSharedPreferences("user_session", Context.MODE_PRIVATE)
+                            prefs.edit().putLong("user_id", userProfile.id).apply()
+
                             // 更新SharedPreferences中的其他用户资料（含头像、角色）
                             sharedPreferences.edit().apply {
                                 putString("nickname", userProfile.nickname)
@@ -209,4 +213,5 @@ class LoginActivity : AppCompatActivity() {
             Log.e("LoginActivity", "Failed to convert userId to Long: $userId")
         }
     }
+
 }

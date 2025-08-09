@@ -29,6 +29,7 @@ import com.iss.network.NetworkService
 import com.iss.repository.FavoriteRepository
 import com.iss.repository.PropertyRepository
 import com.iss.ui.adapters.PropertyImageAdapter
+import com.iss.util.SessionManager
 import com.iss.utils.UserManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -65,7 +66,7 @@ class PropertyDetailFragment : Fragment() {
     private var loadedProperty: Property? = null // New: To store the loaded property object
     private lateinit var imageAdapter: PropertyImageAdapter
     private var propertyImages: List<PropertyImage> = emptyList()
-    
+
     // 收藏相关变量
     private lateinit var btnFavorite: Button
     private var isFavorite: Boolean = false
@@ -113,7 +114,7 @@ class PropertyDetailFragment : Fragment() {
 
         // 设置收藏按钮
         setupFavoriteButton()
-        
+
         // 只有从My Listings进入时才设置编辑和删除按钮
         if (isFromMyListings) {
             setupActionButtons() // Set up edit and delete buttons
@@ -138,6 +139,7 @@ class PropertyDetailFragment : Fragment() {
         btnSubmitComment.setOnClickListener {
             val content = commentEditText.text.toString().trim()
             val rating = ratingBar.rating.toInt()
+            val userId = SessionManager.getCurrentUserId(requireContext())
 
             if (content.isNotEmpty() && rating > 0 && propertyId != -1L) {
                 CoroutineScope(Dispatchers.Main).launch {
@@ -173,8 +175,25 @@ class PropertyDetailFragment : Fragment() {
                             }, 500)
 
                         } else {
-                            Toast.makeText(requireContext(), "Failed to submit", Toast.LENGTH_SHORT).show()
-                            Log.e("CommentSubmit", "Error body: ${response.errorBody()?.string()}")
+                            // 新增：解析后端返回的 message 字段
+                            val errorBody = response.errorBody()?.string()
+                            var message: String? = null
+                            if (!errorBody.isNullOrEmpty()) {
+                                try {
+                                    val json = org.json.JSONObject(errorBody)
+                                    message = json.optString("message")
+                                } catch (e: Exception) {
+                                    // ignore
+                                }
+                            }
+                            if (message == "You cannot comment on your own property.") {
+                                Toast.makeText(requireContext(), "You cannot comment on your own property.", Toast.LENGTH_SHORT).show()
+                            } else if (!message.isNullOrEmpty()) {
+                                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(requireContext(), "Failed to submit", Toast.LENGTH_SHORT).show()
+                            }
+                            Log.e("CommentSubmit", "Error body: $errorBody")
                         }
                     } catch (e: Exception) {
                         Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -192,7 +211,8 @@ class PropertyDetailFragment : Fragment() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val commentApi = NetworkService.commentApi
-                val response = commentApi.getAllComments(propertyId)
+                // 使用带用户名的新接口
+                val response = commentApi.getCommentsWithUsername(propertyId)
                 if (response.isSuccessful) {
                     val comments = response.body() ?: emptyList()
 
@@ -207,8 +227,8 @@ class PropertyDetailFragment : Fragment() {
                     commentsContainer.removeAllViews()
                     for (comment in comments) {
                         val textView = TextView(requireContext()).apply {
-                            // 这里加上 userId
-                            text = "用户ID: ${comment.userId}  ⭐ ${comment.rating} - ${comment.content}"
+                            // 展示 username 而不是 userId
+                            text = "${comment.username}  ⭐ ${comment.rating} - ${comment.content}"
                             setPadding(8, 8, 8, 8)
                             setTextColor(resources.getColor(R.color.text_primary))
                         }
@@ -256,7 +276,7 @@ class PropertyDetailFragment : Fragment() {
     private fun setupViewPager() {
         imageAdapter = PropertyImageAdapter()
         propertyImageViewPager.adapter = imageAdapter
-        
+
         // 设置页面切换监听器
         propertyImageViewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
@@ -350,7 +370,7 @@ class PropertyDetailFragment : Fragment() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val response = propertyApi.deleteProperty(property.id)
-                
+
                 if (response.isSuccessful && response.body()?.data == true) {
                     Toast.makeText(requireContext(), "Property deleted successfully", Toast.LENGTH_LONG).show()
                     // 返回上一页
@@ -375,7 +395,7 @@ class PropertyDetailFragment : Fragment() {
                         loadedProperty = property // Store the loaded property
                         showLoading(false)
                         displayPropertyDetail(property)
-                        
+
                         // 使用Property对象中的imageList
                         loadPropertyImagesFromProperty(property)
                     },
@@ -437,7 +457,7 @@ class PropertyDetailFragment : Fragment() {
                 addFavorite()
             }
         }
-        
+
         // 检查当前房源的收藏状态
         checkFavoriteStatus()
     }
@@ -543,4 +563,5 @@ class PropertyDetailFragment : Fragment() {
                 }
             }
     }
+
 }

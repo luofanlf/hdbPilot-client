@@ -2,6 +2,7 @@ package com.iss.api
 
 import com.iss.model.Comment
 import com.iss.model.CommentRequest
+import com.iss.model.CommentWithUsername
 import com.iss.model.BaseResponse
 import retrofit2.Response
 import retrofit2.http.*
@@ -25,4 +26,8 @@ interface CommentApi {
     @DELETE("/api/comments/{commentId}")
     suspend fun deleteComment(@Path("commentId") commentId: Long): Response<Map<String, String>>
 
+    @GET("/api/comments/property/{propertyId}/with-username")
+    suspend fun getCommentsWithUsername(@Path("propertyId") propertyId: Long): Response<List<CommentWithUsername>>
+
 }
+
