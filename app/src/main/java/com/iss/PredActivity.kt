@@ -23,9 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
-import java.io.IOException
 import java.io.InputStream
-import java.io.OutputStream
 import java.nio.FloatBuffer
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -33,8 +31,6 @@ import java.util.Arrays
 import java.util.Calendar
 import java.util.Collections
 import kotlin.math.exp
-import kotlin.math.max
-
 
 class PredActivity : AppCompatActivity() {
 
@@ -63,18 +59,14 @@ class PredActivity : AppCompatActivity() {
         "> $950,000"
     )
 
-    // --- SCALER_MEANS ---
     private val SCALER_MEANS = floatArrayOf(96.84845448249546f, 2021.0396072722476f, 28.642436834244954f, 8.76201715828304f, 74.36137258412286f)
-    // --- SCALER_STDS ---
     private val SCALER_STDS = floatArrayOf(24.033157565151072f, 2.4350528700044345f, 14.250161536007143f, 5.9354372746999395f, 14.170572025907596f)
 
-    // --- ONEHOT_CATEGORIES ---
     private val ONEHOT_CATEGORIES = listOf(
         arrayOf("ANG MO KIO", "BEDOK", "BISHAN", "BUKIT BATOK", "BUKIT MERAH", "BUKIT PANJANG", "BUKIT TIMAH", "CENTRAL AREA", "CHOA CHU KANG", "CLEMENTI", "GEYLANG", "HOUGANG", "JURONG EAST", "JURONG WEST", "KALLANG/WHAMPOA", "MARINE PARADE", "PASIR RIS", "PUNGGOL", "QUEENSTOWN", "SEMBAWANG", "SENGKANG", "SERANGOON", "TAMPINES", "TOA PAYOH", "WOODLANDS", "YISHUN"), // Category 0: town
         arrayOf("1 ROOM", "2 ROOM", "3 ROOM", "4 ROOM", "5 ROOM", "EXECUTIVE", "MULTI-GENERATION"), // Category 1: flat_type
         arrayOf("2-ROOM", "3GEN", "ADJOINED FLAT", "APARTMENT", "DBSS", "IMPROVED", "IMPROVED-MAISONETTE", "MAISONETTE", "MODEL A", "MODEL A-MAISONETTE", "MODEL A2", "MULTI GENERATION", "NEW GENERATION", "PREMIUM APARTMENT", "PREMIUM APARTMENT LOFT", "PREMIUM MAISONETTE", "SIMPLIFIED", "STANDARD", "TERRACE", "TYPE S1", "TYPE S2"), // Category 2: flat_model
     )
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,16 +83,13 @@ class PredActivity : AppCompatActivity() {
         btnPredict = findViewById(R.id.btnPredict)
         tvResult = findViewById(R.id.tvResult)
 
-        // Setup Spinners with ArrayAdapter
         setupSpinner(spinnerTown, R.array.town_options)
         setupSpinner(spinnerFlatType, R.array.flat_type_options)
         setupSpinner(spinnerFlatModel, R.array.flat_model_options)
         setupSpinner(spinnerStoreyRange, R.array.storey_range_options)
 
-        // Setup Date Picker for Month input only
         setupMonthDatePicker()
 
-        // Add TextWatchers to etMonth and etLeaseCommenceDate to automatically update etRemainingLease
         val textWatcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -111,39 +100,48 @@ class PredActivity : AppCompatActivity() {
         etMonth.addTextChangedListener(textWatcher)
         etLeaseCommenceDate.addTextChangedListener(textWatcher)
 
-        // Check for incoming property data from Intent
-        val incomingFloorArea = intent.getFloatExtra("PROPERTY_FLOOR_AREA_SQM", -1.0f)
-        val incomingTown = intent.getStringExtra("PROPERTY_TOWN")
-        val incomingFlatType = intent.getStringExtra("PROPERTY_FLAT_TYPE")
-        val incomingFlatModel = intent.getStringExtra("PROPERTY_FLAT_MODEL")
-        val incomingStoreyRange = intent.getStringExtra("PROPERTY_STOREY_RANGE")
-        val incomingRemainingLease = intent.getStringExtra("PROPERTY_REMAINING_LEASE")
-        val incomingMonth = intent.getStringExtra("PROPERTY_MONTH")
-        val incomingLeaseCommenceDate = intent.getIntExtra("PROPERTY_LEASE_COMMENCE_DATE", -1)
+        // --- 核心修改：匹配你的 JSON 返回数据键名和处理逻辑 ---
+        val incomingFloorArea = intent.getFloatExtra("floorAreaSqm", -1.0f)
+        val incomingTown = intent.getStringExtra("town")
+        val incomingFlatModel = intent.getStringExtra("flatModel")
+        val incomingStoreyRange = intent.getStringExtra("storey")
+        val incomingLeaseCommenceDate = intent.getIntExtra("topYear", -1)
+        val incomingBedroomNumber = intent.getIntExtra("bedroomNumber", -1)
+        val incomingCreatedAt = intent.getStringExtra("createdAt")
 
-        // Populate EditTexts/Spinners with incoming data or default test data
-        if (incomingFloorArea != -1.0f && incomingTown != null) {
-            etFloorArea.setText(incomingFloorArea.toString())
-            setSpinnerSelection(spinnerTown, incomingTown, R.array.town_options)
-            setSpinnerSelection(spinnerFlatType, incomingFlatType, R.array.flat_type_options)
-            setSpinnerSelection(spinnerFlatModel, incomingFlatModel, R.array.flat_model_options)
-            setSpinnerSelection(spinnerStoreyRange, incomingStoreyRange, R.array.storey_range_options)
-            etRemainingLease.setText(incomingRemainingLease)
-            etMonth.setText(incomingMonth)
-            etLeaseCommenceDate.setText(incomingLeaseCommenceDate.toString())
-        } else {
-            // Set default test input if no incoming data
-            etFloorArea.setText("95.0")
-            setSpinnerSelection(spinnerTown, "TAMPINES", R.array.town_options)
-            setSpinnerSelection(spinnerFlatType, "4 ROOM", R.array.flat_type_options)
-            setSpinnerSelection(spinnerFlatModel, "IMPROVED", R.array.flat_model_options)
-            setSpinnerSelection(spinnerStoreyRange, "07 TO 09", R.array.storey_range_options)
-            etRemainingLease.setText("75")
-            etMonth.setText("2019-06")
-            etLeaseCommenceDate.setText("1990")
+        // 从 bedroomNumber 推断 flatType
+        val incomingFlatType = when (incomingBedroomNumber) {
+            1 -> "1 ROOM"
+            2 -> "2 ROOM"
+            3 -> "3 ROOM"
+            4 -> "4 ROOM"
+            5 -> "5 ROOM"
+            else -> null
         }
 
-        // Initial calculation to set the default value
+        // 从 createdAt 提取月份，格式化为 "yyyy-MM"
+        val incomingMonth = if (!incomingCreatedAt.isNullOrEmpty() && incomingCreatedAt.length >= 7) {
+            incomingCreatedAt.substring(0, 7)
+        } else {
+            null
+        }
+
+        // 填充数据逻辑，只在数据有效时才设置
+        if (incomingFloorArea != -1.0f) {
+            etFloorArea.setText(incomingFloorArea.toString())
+        }
+        setSpinnerSelection(spinnerTown, incomingTown, R.array.town_options)
+        setSpinnerSelection(spinnerFlatType, incomingFlatType, R.array.flat_type_options)
+        setSpinnerSelection(spinnerFlatModel, incomingFlatModel, R.array.flat_model_options)
+        setSpinnerSelection(spinnerStoreyRange, incomingStoreyRange, R.array.storey_range_options)
+
+        if (incomingLeaseCommenceDate != -1) {
+            etLeaseCommenceDate.setText(incomingLeaseCommenceDate.toString())
+        }
+        if (!incomingMonth.isNullOrEmpty()) {
+            etMonth.setText(incomingMonth)
+        }
+
         updateRemainingLease()
 
         GlobalScope.launch(Dispatchers.IO) {
@@ -175,24 +173,22 @@ class PredActivity : AppCompatActivity() {
         }
     }
 
-    // Helper function to setup AutoCompleteTextView as a dropdown
     private fun setupSpinner(spinner: AutoCompleteTextView, arrayResId: Int) {
         val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, resources.getStringArray(arrayResId))
         spinner.setAdapter(adapter)
         spinner.keyListener = null
-        spinner.setOnTouchListener { v, event ->
-            if (event.action == android.view.MotionEvent.ACTION_UP) {
+        spinner.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_UP) {
                 spinner.showDropDown()
             }
             false
         }
     }
 
-    // Helper function to set selection for AutoCompleteTextView dropdown
     private fun setSpinnerSelection(spinner: AutoCompleteTextView, value: String?, arrayResId: Int) {
         if (value == null) return
         val array = resources.getStringArray(arrayResId)
-        val index = array.indexOf(value)
+        val index = array.indexOfFirst { it.equals(value, ignoreCase = true) }
         if (index != -1) {
             spinner.setText(array[index], false)
         } else {
@@ -201,7 +197,6 @@ class PredActivity : AppCompatActivity() {
         }
     }
 
-    // Setup DatePickerDialog for Month input only
     private fun setupMonthDatePicker() {
         etMonth.setOnClickListener {
             val calendar = Calendar.getInstance()
@@ -223,13 +218,7 @@ class PredActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Calculates and updates the etRemainingLease based on etMonth and etLeaseCommenceDate.
-     * The remaining lease is calculated as (Year of Month + 99) - Lease Commence Year.
-     * If the result is not within 1-99, the remaining lease field is cleared.
-     */
     private fun updateRemainingLease() {
-        // Parse the year from the month string (e.g., "2019-06" -> 2019)
         val monthYear = etMonth.text.toString().trim()
         val currentYear = try {
             if (monthYear.length >= 4) monthYear.substring(0, 4).toInt() else null
@@ -237,7 +226,6 @@ class PredActivity : AppCompatActivity() {
             null
         }
 
-        // Get the years from the lease commence date input
         val leaseCommenceDateStr = etLeaseCommenceDate.text.toString().trim()
         val leaseCommenceDate = try {
             leaseCommenceDateStr.toIntOrNull()
@@ -245,25 +233,17 @@ class PredActivity : AppCompatActivity() {
             null
         }
 
-        // Perform the calculation and set the result
         if (currentYear != null && leaseCommenceDate != null) {
-            // The formula is: 99 - (Current Year - Lease Commence Year)
             val remainingLease = 99 - (currentYear - leaseCommenceDate)
-
-            // Check if the calculated value is within the valid range (1-99)
             if (remainingLease >= 1 && remainingLease <= 99) {
                 etRemainingLease.setText(remainingLease.toString())
             } else {
-                // If it's outside the range, clear the field
                 etRemainingLease.setText("")
-
             }
         } else {
-            // Clear the fields if any of the inputs are invalid
             etRemainingLease.setText("")
         }
     }
-
 
     private fun performPrediction() {
         Log.d("ONNXRT_DEBUG", "performPrediction started.")
@@ -273,7 +253,6 @@ class PredActivity : AppCompatActivity() {
             return
         }
 
-        // Ensure the remaining lease is up-to-date before prediction
         updateRemainingLease()
 
         val floorAreaStr = etFloorArea.text.toString()
