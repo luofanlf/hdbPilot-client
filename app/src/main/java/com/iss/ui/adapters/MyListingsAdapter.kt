@@ -17,6 +17,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
+import android.widget.TextView
+import androidx.core.content.ContextCompat
+import android.util.Log
 
 class MyListingsAdapter(
     private val onItemClick: (Property) -> Unit
@@ -53,6 +56,13 @@ class MyListingsAdapter(
                 floorInfoText.text = "Level ${property.storey}"
                 flatModelText.text = property.flatModel
 
+                // 显示房源状态
+                propertyStatus.text = formatStatus(property.status)
+                setStatusStyle(propertyStatus, property.status)
+                
+                // 调试日志
+                Log.d("MyListingsAdapter", "Property ID: ${property.id}, Status: ${property.status}, Formatted: ${formatStatus(property.status)}")
+
                 // 使用Property对象中的imageList
                 loadPropertyThumbnail(propertyImage, property)
 
@@ -66,6 +76,29 @@ class MyListingsAdapter(
         private fun formatPrice(price: Float): String {
             val formatter = NumberFormat.getCurrencyInstance(Locale("en", "SG"))
             return formatter.format(price)
+        }
+
+        private fun formatStatus(status: String?): String {
+            return when (status?.lowercase()) {
+                "pending" -> "Pending"
+                "available" -> "Available"
+                "sold" -> "Sold"
+                "rejected" -> "Rejected"
+                else -> status ?: "Unknown"
+            }
+        }
+
+        private fun setStatusStyle(textView: TextView, status: String?) {
+            val (backgroundRes, textColor) = when (status?.lowercase()) {
+                "pending" -> Pair(R.drawable.status_pending_background, R.color.text_primary)
+                "available" -> Pair(R.drawable.status_available_background, R.color.white)
+                "sold" -> Pair(R.drawable.status_sold_background, R.color.text_primary)
+                "rejected" -> Pair(R.drawable.status_rejected_background, R.color.white)
+                else -> Pair(R.drawable.status_background, R.color.text_primary)
+            }
+            
+            textView.setBackgroundResource(backgroundRes)
+            textView.setTextColor(ContextCompat.getColor(textView.context, textColor))
         }
 
         private fun String.capitalize(): String {

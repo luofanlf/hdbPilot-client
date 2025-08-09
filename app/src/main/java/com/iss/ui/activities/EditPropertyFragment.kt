@@ -151,23 +151,29 @@ class EditPropertyFragment : Fragment() {
             etConstructionYear.setText(property.topYear.toString())
             etFlatModel.setText(property.flatModel)
             etResalePrice.setText(property.resalePrice.toString())
+            etStatus.setText(property.status) // 填充状态
         }
     }
 
     private fun setupDropdowns() {
-        // Town dropdown
+        // 设置城镇下拉选择
         binding.etTown.setOnClickListener {
             showTownDialog()
         }
 
-        // Construction Year dropdown
+        // 设置建筑年份下拉选择
         binding.etConstructionYear.setOnClickListener {
-            showConstructionYearDialog()
+            showYearDialog()
         }
 
-        // Flat Model dropdown
+        // 设置公寓模型下拉选择
         binding.etFlatModel.setOnClickListener {
             showFlatModelDialog()
+        }
+
+        // 设置状态下拉选择
+        binding.etStatus.setOnClickListener {
+            showStatusDialog()
         }
     }
 
@@ -188,7 +194,7 @@ class EditPropertyFragment : Fragment() {
             .show()
     }
 
-    private fun showConstructionYearDialog() {
+    private fun showYearDialog() {
         val years = (1990..2024).toList().map { it.toString() }.toTypedArray()
 
         AlertDialog.Builder(requireContext())
@@ -213,6 +219,20 @@ class EditPropertyFragment : Fragment() {
             .show()
     }
 
+    private fun showStatusDialog() {
+        val statusOptions = arrayOf("Available", "Sold")
+        val currentStatus = binding.etStatus.text.toString()
+        val currentIndex = statusOptions.indexOf(currentStatus)
+        
+        AlertDialog.Builder(requireContext())
+            .setTitle("Select Property Status")
+            .setSingleChoiceItems(statusOptions, currentIndex) { _, which ->
+                binding.etStatus.setText(statusOptions[which])
+            }
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
     private fun updateProperty() {
         // 验证表单
         if (!validateForm()) {
@@ -225,21 +245,50 @@ class EditPropertyFragment : Fragment() {
             return
         }
         
-        // 创建PropertyRequest对象
+        // 获取当前表单值
+        val currentTitle = binding.etTitle.text.toString().trim()
+        val currentStreetName = binding.etStreetName.text.toString().trim()
+        val currentBlock = binding.etBlock.text.toString().trim()
+        val currentTown = binding.etTown.text.toString().trim()
+        val currentPostalCode = binding.etPostalCode.text.toString().trim()
+        val currentBedroomNumber = binding.etBedroomNumber.text.toString().trim()
+        val currentBathroomNumber = binding.etBathroomNumber.text.toString().trim()
+        val currentFloorArea = binding.etFloorArea.text.toString().trim()
+        val currentConstructionYear = binding.etConstructionYear.text.toString().trim()
+        val currentFlatModel = binding.etFlatModel.text.toString().trim()
+        val currentResalePrice = binding.etResalePrice.text.toString().trim()
+        val currentStatus = binding.etStatus.text.toString().trim()
+
+        // 获取原始值
+        val originalTitle = originalProperty?.listingTitle ?: ""
+        val originalStreetName = originalProperty?.streetName ?: ""
+        val originalBlock = originalProperty?.block ?: ""
+        val originalTown = originalProperty?.town ?: ""
+        val originalPostalCode = originalProperty?.postalCode ?: ""
+        val originalBedroomNumber = originalProperty?.bedroomNumber?.toString() ?: ""
+        val originalBathroomNumber = originalProperty?.bathroomNumber?.toString() ?: ""
+        val originalFloorArea = originalProperty?.floorAreaSqm?.toString() ?: ""
+        val originalConstructionYear = originalProperty?.topYear?.toString() ?: ""
+        val originalFlatModel = originalProperty?.flatModel ?: ""
+        val originalResalePrice = originalProperty?.resalePrice?.toString() ?: ""
+        val originalStatus = originalProperty?.status ?: ""
+
+        // 创建PropertyRequest对象，只包含被修改的字段
         val propertyRequest = PropertyRequest(
-            listingTitle = binding.etTitle.text.toString(),
-            sellerId = UserManager.getCurrentUserId(), // 使用当前登录用户的ID
-            town = binding.etTown.text.toString(),
-            postalCode = binding.etPostalCode.text.toString(),
-            bedroomNumber = binding.etBedroomNumber.text.toString().toInt(),
-            bathroomNumber = binding.etBathroomNumber.text.toString().toInt(),
-            block = binding.etBlock.text.toString(),
-            streetName = binding.etStreetName.text.toString(),
-            storey = "15th Floor", // 默认值，因为表单中没有这个字段
-            floorAreaSqm = binding.etFloorArea.text.toString().toFloat(),
-            topYear = binding.etConstructionYear.text.toString().toInt(),
-            flatModel = binding.etFlatModel.text.toString(),
-            resalePrice = binding.etResalePrice.text.toString().toFloat()
+            listingTitle = if (currentTitle != originalTitle) currentTitle else originalTitle,
+            sellerId = UserManager.getCurrentUserId(),
+            town = if (currentTown != originalTown) currentTown else originalTown,
+            postalCode = if (currentPostalCode != originalPostalCode) currentPostalCode else originalPostalCode,
+            bedroomNumber = if (currentBedroomNumber != originalBedroomNumber) currentBedroomNumber.toInt() else (originalProperty?.bedroomNumber ?: 0),
+            bathroomNumber = if (currentBathroomNumber != originalBathroomNumber) currentBathroomNumber.toInt() else (originalProperty?.bathroomNumber ?: 0),
+            block = if (currentBlock != originalBlock) currentBlock else originalBlock,
+            streetName = if (currentStreetName != originalStreetName) currentStreetName else originalStreetName,
+            storey = originalProperty?.storey ?: "15th Floor", // 保持原始值
+            floorAreaSqm = if (currentFloorArea != originalFloorArea) currentFloorArea.toFloat() else (originalProperty?.floorAreaSqm ?: 0f),
+            topYear = if (currentConstructionYear != originalConstructionYear) currentConstructionYear.toInt() else (originalProperty?.topYear ?: 0),
+            flatModel = if (currentFlatModel != originalFlatModel) currentFlatModel else originalFlatModel,
+            resalePrice = if (currentResalePrice != originalResalePrice) currentResalePrice.toFloat() else (originalProperty?.resalePrice ?: 0f),
+            status = if (currentStatus != originalStatus) currentStatus else originalStatus
         )
 
         // 调用更新API
@@ -318,104 +367,158 @@ class EditPropertyFragment : Fragment() {
     }
 
     private fun validateForm(): Boolean {
-        val title = binding.etTitle.text.toString().trim()
-        val streetName = binding.etStreetName.text.toString().trim()
-        val block = binding.etBlock.text.toString().trim()
-        val town = binding.etTown.text.toString().trim()
-        val postalCode = binding.etPostalCode.text.toString().trim()
-        val bedroomNumber = binding.etBedroomNumber.text.toString().trim()
-        val bathroomNumber = binding.etBathroomNumber.text.toString().trim()
-        val floorArea = binding.etFloorArea.text.toString().trim()
-        val constructionYear = binding.etConstructionYear.text.toString().trim()
-        val flatModel = binding.etFlatModel.text.toString().trim()
-        val resalePrice = binding.etResalePrice.text.toString().trim()
+        // 获取当前表单值
+        val currentTitle = binding.etTitle.text.toString().trim()
+        val currentStreetName = binding.etStreetName.text.toString().trim()
+        val currentBlock = binding.etBlock.text.toString().trim()
+        val currentTown = binding.etTown.text.toString().trim()
+        val currentPostalCode = binding.etPostalCode.text.toString().trim()
+        val currentBedroomNumber = binding.etBedroomNumber.text.toString().trim()
+        val currentBathroomNumber = binding.etBathroomNumber.text.toString().trim()
+        val currentFloorArea = binding.etFloorArea.text.toString().trim()
+        val currentConstructionYear = binding.etConstructionYear.text.toString().trim()
+        val currentFlatModel = binding.etFlatModel.text.toString().trim()
+        val currentResalePrice = binding.etResalePrice.text.toString().trim()
+        val currentStatus = binding.etStatus.text.toString().trim()
 
-        if (title.isEmpty()) {
+        // 获取原始值
+        val originalTitle = originalProperty?.listingTitle ?: ""
+        val originalStreetName = originalProperty?.streetName ?: ""
+        val originalBlock = originalProperty?.block ?: ""
+        val originalTown = originalProperty?.town ?: ""
+        val originalPostalCode = originalProperty?.postalCode ?: ""
+        val originalBedroomNumber = originalProperty?.bedroomNumber?.toString() ?: ""
+        val originalBathroomNumber = originalProperty?.bathroomNumber?.toString() ?: ""
+        val originalFloorArea = originalProperty?.floorAreaSqm?.toString() ?: ""
+        val originalConstructionYear = originalProperty?.topYear?.toString() ?: ""
+        val originalFlatModel = originalProperty?.flatModel ?: ""
+        val originalResalePrice = originalProperty?.resalePrice?.toString() ?: ""
+        val originalStatus = originalProperty?.status ?: ""
+
+        // 检查哪些字段被修改了
+        val titleChanged = currentTitle != originalTitle
+        val streetNameChanged = currentStreetName != originalStreetName
+        val blockChanged = currentBlock != originalBlock
+        val townChanged = currentTown != originalTown
+        val postalCodeChanged = currentPostalCode != originalPostalCode
+        val bedroomNumberChanged = currentBedroomNumber != originalBedroomNumber
+        val bathroomNumberChanged = currentBathroomNumber != originalBathroomNumber
+        val floorAreaChanged = currentFloorArea != originalFloorArea
+        val constructionYearChanged = currentConstructionYear != originalConstructionYear
+        val flatModelChanged = currentFlatModel != originalFlatModel
+        val resalePriceChanged = currentResalePrice != originalResalePrice
+        val statusChanged = currentStatus != originalStatus
+
+        // 如果没有字段被修改，提示用户
+        if (!titleChanged && !streetNameChanged && !blockChanged && !townChanged && 
+            !postalCodeChanged && !bedroomNumberChanged && !bathroomNumberChanged && 
+            !floorAreaChanged && !constructionYearChanged && !flatModelChanged && 
+            !resalePriceChanged && !statusChanged) {
+            Toast.makeText(requireContext(), "No changes detected", Toast.LENGTH_SHORT).show()
+            return false
+        }
+
+        // 验证被修改的字段
+        if (titleChanged && currentTitle.isEmpty()) {
             binding.etTitle.error = "Property title is required"
             return false
         }
 
-        if (streetName.isEmpty()) {
+        if (streetNameChanged && currentStreetName.isEmpty()) {
             binding.etStreetName.error = "Street name is required"
             return false
         }
 
-        if (block.isEmpty()) {
+        if (blockChanged && currentBlock.isEmpty()) {
             binding.etBlock.error = "Block/Storey is required"
             return false
         }
 
-        if (town.isEmpty()) {
+        if (townChanged && currentTown.isEmpty()) {
             binding.etTown.error = "Town is required"
             return false
         }
 
-        if (postalCode.isEmpty() || postalCode.length != 6) {
+        if (postalCodeChanged && (currentPostalCode.isEmpty() || currentPostalCode.length != 6)) {
             binding.etPostalCode.error = "Valid postal code is required"
             return false
         }
 
-        if (bedroomNumber.isEmpty()) {
+        if (bedroomNumberChanged && currentBedroomNumber.isEmpty()) {
             binding.etBedroomNumber.error = "Bedroom number is required"
             return false
         }
 
-        if (bathroomNumber.isEmpty()) {
+        if (bathroomNumberChanged && currentBathroomNumber.isEmpty()) {
             binding.etBathroomNumber.error = "Bathroom number is required"
             return false
         }
 
-        if (floorArea.isEmpty()) {
+        if (floorAreaChanged && currentFloorArea.isEmpty()) {
             binding.etFloorArea.error = "Floor area is required"
             return false
         }
 
-        if (constructionYear.isEmpty()) {
+        if (constructionYearChanged && currentConstructionYear.isEmpty()) {
             binding.etConstructionYear.error = "Construction year is required"
             return false
         }
 
-        if (flatModel.isEmpty()) {
+        if (flatModelChanged && currentFlatModel.isEmpty()) {
             binding.etFlatModel.error = "Flat model is required"
             return false
         }
 
-        if (resalePrice.isEmpty()) {
+        if (resalePriceChanged && currentResalePrice.isEmpty()) {
             binding.etResalePrice.error = "Resale price is required"
             return false
         }
 
-        // 验证数字字段
+        if (statusChanged && currentStatus.isEmpty()) {
+            binding.etStatus.error = "Property status is required"
+            return false
+        }
+
+        // 验证被修改的数字字段
         try {
-            val bedroom = bedroomNumber.toInt()
-            val bathroom = bathroomNumber.toInt()
-            val area = floorArea.toFloat()
-            val year = constructionYear.toInt()
-            val price = resalePrice.toFloat()
-
-            if (bedroom < 1 || bedroom > 10) {
-                binding.etBedroomNumber.error = "Bedroom number must be between 1 and 10"
-                return false
+            if (bedroomNumberChanged) {
+                val bedroom = currentBedroomNumber.toInt()
+                if (bedroom < 1 || bedroom > 10) {
+                    binding.etBedroomNumber.error = "Bedroom number must be between 1 and 10"
+                    return false
+                }
             }
 
-            if (bathroom < 1 || bathroom > 5) {
-                binding.etBathroomNumber.error = "Bathroom number must be between 1 and 5"
-                return false
+            if (bathroomNumberChanged) {
+                val bathroom = currentBathroomNumber.toInt()
+                if (bathroom < 1 || bathroom > 5) {
+                    binding.etBathroomNumber.error = "Bathroom number must be between 1 and 5"
+                    return false
+                }
             }
 
-            if (area < 20 || area > 500) {
-                binding.etFloorArea.error = "Floor area must be between 20 and 500 sqm"
-                return false
+            if (floorAreaChanged) {
+                val area = currentFloorArea.toFloat()
+                if (area < 20 || area > 500) {
+                    binding.etFloorArea.error = "Floor area must be between 20 and 500 sqm"
+                    return false
+                }
             }
 
-            if (year < 1990 || year > 2024) {
-                binding.etConstructionYear.error = "Construction year must be between 1990 and 2024"
-                return false
+            if (constructionYearChanged) {
+                val year = currentConstructionYear.toInt()
+                if (year < 1990 || year > 2024) {
+                    binding.etConstructionYear.error = "Construction year must be between 1990 and 2024"
+                    return false
+                }
             }
 
-            if (price < 100000 || price > 2000000) {
-                binding.etResalePrice.error = "Resale price must be between 100,000 and 2,000,000"
-                return false
+            if (resalePriceChanged) {
+                val price = currentResalePrice.toFloat()
+                if (price < 100000 || price > 2000000) {
+                    binding.etResalePrice.error = "Resale price must be between 100,000 and 2,000,000"
+                    return false
+                }
             }
 
         } catch (e: NumberFormatException) {

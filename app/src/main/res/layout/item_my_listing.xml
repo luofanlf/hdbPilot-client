@@ -33,15 +33,34 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
+            android:layout_marginEnd="8dp"
             android:ellipsize="end"
             android:maxLines="2"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/propertyStatus"
             app:layout_constraintStart_toEndOf="@id/propertyImage"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="3-Room HDB Flat - Near MRT Station" />
+
+        <!-- 房源状态 -->
+        <TextView
+            android:id="@+id/propertyStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:background="@drawable/status_background"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
+            android:minWidth="60dp"
+            android:gravity="center"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Pending" />
 
         <!-- 地址 -->
         <TextView
