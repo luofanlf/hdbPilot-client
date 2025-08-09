@@ -9,10 +9,6 @@
         android:icon="@drawable/ic_activities"
         android:title="My Activities" />
     <item
-        android:id="@+id/moreFragment"
-        android:icon="@drawable/ic_more"
-        android:title="More" />
-    <item
         android:id="@+id/mapFragment"
         android:icon="@drawable/ic_map"
         android:title="Map" />

@@ -76,11 +76,6 @@
             app:destination="@id/propertyDetailFragment" />
     </fragment>
     
-    <fragment
-        android:id="@+id/moreFragment"
-        android:name="com.iss.ui.more.MoreFragment"
-        android:label="fragment_more"
-        tools:layout="@layout/fragment_more" />
     
     <fragment
         android:id="@+id/propertyDetailFragment"

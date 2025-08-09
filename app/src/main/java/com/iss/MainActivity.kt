@@ -81,11 +81,6 @@ class MainActivity : AppCompatActivity() {
                     navController.navigate(R.id.myActivitiesFragment)
                     true
                 }
-                R.id.moreFragment -> {
-                    Log.d("MainActivity", "More按钮被点击")
-                    navController.navigate(R.id.moreFragment)
-                    true
-                }
                 R.id.mapFragment -> {
                     Log.d("MainActivity", "Map按钮被点击")
                     navController.navigate(R.id.mapFragment)
