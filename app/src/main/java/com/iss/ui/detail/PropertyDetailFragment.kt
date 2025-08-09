@@ -61,18 +61,16 @@ class PropertyDetailFragment : Fragment() {
     private val favoriteRepository = FavoriteRepository()
     private lateinit var propertyApi: PropertyApi
     private var propertyId: Long = -1
-    private var isFromMyListings: Boolean = false // 标记是否来自My Listings
+    private var isFromMyListings: Boolean = false
 
-    private var loadedProperty: Property? = null // New: To store the loaded property object
+    private var loadedProperty: Property? = null
     private lateinit var imageAdapter: PropertyImageAdapter
     private var propertyImages: List<PropertyImage> = emptyList()
 
-    // 收藏相关变量
     private lateinit var btnFavorite: Button
     private var isFavorite: Boolean = false
     private var currentFavoriteId: Long? = null
 
-    // 1. 新增视图组件
     private lateinit var commentEditText: EditText
     private lateinit var ratingBar: RatingBar
     private lateinit var btnSubmitComment: Button
@@ -101,7 +99,7 @@ class PropertyDetailFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         initViews(view)
-        setupGoToPredictionButton() // Set up button listener after views are initialized
+        setupGoToPredictionButton()
 
         btnViewMap.setOnClickListener {
             loadedProperty?.let { property ->
@@ -112,22 +110,16 @@ class PropertyDetailFragment : Fragment() {
             }
         }
 
-        // 设置收藏按钮
         setupFavoriteButton()
 
-        // 只有从My Listings进入时才设置编辑和删除按钮
         if (isFromMyListings) {
-            setupActionButtons() // Set up edit and delete buttons
+            setupActionButtons()
         } else {
-            // 从Home页面进入时隐藏编辑和删除按钮
             btnEdit.visibility = View.GONE
             btnDelete.visibility = View.GONE
         }
 
-        // 初始化API
         propertyApi = NetworkService.propertyApi
-
-        // 初始化ViewPager2
         setupViewPager()
 
         if (propertyId != -1L) {
@@ -146,13 +138,12 @@ class PropertyDetailFragment : Fragment() {
                     try {
                         val commentApi = NetworkService.commentApi
 
-                        // 使用干净请求体：CommentRequest，而非 Comment！
                         val userId = UserManager.getCurrentUserId()
                         if (userId == -1L) {
                             Toast.makeText(requireContext(), "Please login to submit comment", Toast.LENGTH_SHORT).show()
                             return@launch
                         }
-                        
+
                         val comment = CommentRequest(
                             content = content,
                             rating = rating,
@@ -164,18 +155,13 @@ class PropertyDetailFragment : Fragment() {
 
                         if (response.isSuccessful) {
                             Toast.makeText(requireContext(), "Comment submitted", Toast.LENGTH_SHORT).show()
-
-                            // 清空 UI
                             commentEditText.text.clear()
                             ratingBar.rating = 0f
-
-                            // 可选：延迟 500ms，等待后端数据入库
                             Handler(Looper.getMainLooper()).postDelayed({
                                 loadComments(propertyId)
                             }, 500)
 
                         } else {
-                            // 新增：解析后端返回的 message 字段
                             val errorBody = response.errorBody()?.string()
                             var message: String? = null
                             if (!errorBody.isNullOrEmpty()) {
@@ -211,26 +197,22 @@ class PropertyDetailFragment : Fragment() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val commentApi = NetworkService.commentApi
-                // 使用带用户名的新接口
                 val response = commentApi.getCommentsWithUsername(propertyId)
                 if (response.isSuccessful) {
                     val comments = response.body() ?: emptyList()
 
-                    // 显示平均评分
                     val avgResponse = commentApi.getAverageRating(propertyId)
                     if (avgResponse.isSuccessful) {
                         val avg = avgResponse.body() ?: 0.0
                         averageRatingText.text = "Average Rating: %.1f".format(avg)
                     }
 
-                    // 清空并显示评论
                     commentsContainer.removeAllViews()
                     for (comment in comments) {
                         val textView = TextView(requireContext()).apply {
-                            // 展示 username 而不是 userId
                             text = "${comment.username}  ⭐ ${comment.rating} - ${comment.content}"
                             setPadding(8, 8, 8, 8)
-                            setTextColor(resources.getColor(R.color.text_primary))
+                            setTextColor(resources.getColor(R.color.text_primary, null))
                         }
                         commentsContainer.addView(textView)
                     }
@@ -264,7 +246,6 @@ class PropertyDetailFragment : Fragment() {
 
         btnViewMap = view.findViewById(R.id.btnViewMap)
         btnFavorite = view.findViewById(R.id.btnFavorite)
-        // 2. 在 initViews(view) 中加上以下初始化代码
         commentEditText = view.findViewById(R.id.commentEditText)
         ratingBar = view.findViewById(R.id.ratingBar)
         btnSubmitComment = view.findViewById(R.id.btnSubmitComment)
@@ -272,12 +253,9 @@ class PropertyDetailFragment : Fragment() {
         averageRatingText = view.findViewById(R.id.averageRatingText)
     }
 
-
     private fun setupViewPager() {
         imageAdapter = PropertyImageAdapter()
         propertyImageViewPager.adapter = imageAdapter
-
-        // 设置页面切换监听器
         propertyImageViewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 updateImageCounter(position)
@@ -308,16 +286,15 @@ class PropertyDetailFragment : Fragment() {
         btnGoToPrediction.setOnClickListener {
             loadedProperty?.let { property ->
                 val intent = Intent(requireContext(), PredActivity::class.java).apply {
-                    // Pass all relevant property data as extras
-                    putExtra("PROPERTY_FLOOR_AREA_SQM", property.floorAreaSqm) // Assuming Float
-                    putExtra("PROPERTY_TOWN", property.town) // Assuming String
-                    putExtra("PROPERTY_FLAT_TYPE", property.flatType) // Assuming String
-                    putExtra("PROPERTY_FLAT_MODEL", property.flatModel) // Assuming String
-                    putExtra("PROPERTY_STOREY_RANGE", property.storeyRange) // Assuming String, e.g., "07 TO 09"
-                    putExtra("PROPERTY_REMAINING_LEASE", property.remainingLease) // Assuming String, e.g., "75 years 00 months"
-                    putExtra("PROPERTY_MONTH", property.month) // Assuming String, e.g., "2019-06"
-                    putExtra("PROPERTY_LEASE_COMMENCE_DATE", property.leaseCommenceDate) // Assuming Int
-                    // You might need to adjust field names based on your 'Property' data class structure
+                    // Pass data using keys that match the backend JSON
+                    putExtra("floorAreaSqm", property.floorAreaSqm)
+                    putExtra("town", property.town)
+                    putExtra("bedroomNumber", property.bedroomNumber) // Pass bedroomNumber to infer flatType
+                    putExtra("flatModel", property.flatModel)
+                    putExtra("storey", property.storey)
+                    putExtra("topYear", property.topYear)
+                    // The backend returns a LocalDateTime, convert it to a String for passing
+                    putExtra("createdAt", property.createdAt.toString())
                 }
                 startActivity(intent)
             } ?: run {
@@ -370,10 +347,8 @@ class PropertyDetailFragment : Fragment() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val response = propertyApi.deleteProperty(property.id)
-
                 if (response.isSuccessful && response.body()?.data == true) {
                     Toast.makeText(requireContext(), "Property deleted successfully", Toast.LENGTH_LONG).show()
-                    // 返回上一页
                     requireActivity().onBackPressedDispatcher.onBackPressed()
                 } else {
                     Toast.makeText(requireContext(), "Failed to delete property", Toast.LENGTH_LONG).show()
@@ -391,22 +366,20 @@ class PropertyDetailFragment : Fragment() {
                 val result = propertyRepository.getPropertyById(id)
                 result.fold(
                     onSuccess = { property ->
-                        android.util.Log.d("PropertyDetailFragment", "Property loaded: ${property.listingTitle}")
-                        loadedProperty = property // Store the loaded property
+                        Log.d("PropertyDetailFragment", "Property loaded: ${property.listingTitle}")
+                        loadedProperty = property
                         showLoading(false)
                         displayPropertyDetail(property)
-
-                        // 使用Property对象中的imageList
                         loadPropertyImagesFromProperty(property)
                     },
                     onFailure = { exception ->
-                        android.util.Log.e("PropertyDetailFragment", "Failed to load property: ${exception.message}")
+                        Log.e("PropertyDetailFragment", "Failed to load property: ${exception.message}")
                         showLoading(false)
                         showError("Failed to load property: ${exception.message}")
                     }
                 )
             } catch (e: Exception) {
-                android.util.Log.e("PropertyDetailFragment", "Exception loading property", e)
+                Log.e("PropertyDetailFragment", "Exception loading property", e)
                 showLoading(false)
                 showError("Error: ${e.message}")
             }
@@ -421,7 +394,9 @@ class PropertyDetailFragment : Fragment() {
         bedroomText.text = "${property.bedroomNumber} Bedroom${if (property.bedroomNumber > 1) "s" else ""}"
         bathroomText.text = "${property.bathroomNumber} Bathroom${if (property.bathroomNumber > 1) "s" else ""}"
         areaText.text = property.formattedArea
-        storeyText.text = property.floorInfo
+        // The property object might not have a 'floorInfo' field directly, so let's use 'storey'
+        // Assuming your `Property` data class has a `storey` field
+        storeyText.text = "Storey: ${property.storey}"
         flatModelText.text = property.flatModel
         topYearText.text = property.topYear.toString()
         statusText.text = property.status
@@ -448,7 +423,6 @@ class PropertyDetailFragment : Fragment() {
         errorText.visibility = View.GONE
     }
 
-    // 收藏相关方法
     private fun setupFavoriteButton() {
         btnFavorite.setOnClickListener {
             if (isFavorite) {
@@ -457,8 +431,6 @@ class PropertyDetailFragment : Fragment() {
                 addFavorite()
             }
         }
-
-        // 检查当前房源的收藏状态
         checkFavoriteStatus()
     }
 
@@ -517,7 +489,6 @@ class PropertyDetailFragment : Fragment() {
     private fun removeFavorite() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                // 优先使用 propertyId 来取消收藏，避免 favoriteId 的问题
                 val result = favoriteRepository.removeFavoriteByPropertyId(propertyId)
                 result.fold(
                     onSuccess = { success ->
@@ -563,5 +534,4 @@ class PropertyDetailFragment : Fragment() {
                 }
             }
     }
-
 }
