@@ -20,6 +20,12 @@ interface FavoriteApi {
         @Query("userId") userId: Long
     ): Response<BaseResponse<Boolean>>
 
+    @DELETE("favorite/property/{propertyId}")
+    suspend fun removeFavoriteByPropertyId(
+        @Path("propertyId") propertyId: Long,
+        @Query("userId") userId: Long
+    ): Response<BaseResponse<Boolean>>
+
     @GET("favorite/user/{userId}")
     suspend fun getUserFavorites(
         @Path("userId") userId: Long,
@@ -31,7 +37,7 @@ interface FavoriteApi {
     suspend fun isFavorite(
         @Query("userId") userId: Long,
         @Query("propertyId") propertyId: Long
-    ): Response<BaseResponse<Boolean>>
+    ): Response<BaseResponse<Favorite>>
 
     @GET("favorite/user/{userId}/property-ids")
     suspend fun getUserFavoritePropertyIds(

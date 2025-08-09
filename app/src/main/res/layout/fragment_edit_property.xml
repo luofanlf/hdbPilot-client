@@ -234,7 +234,7 @@
                     android:id="@+id/resalePriceLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="12dp"
                     android:hint="Resale Price (SGD)"
                     app:startIconDrawable="@drawable/edit_ic_money"
                     app:startIconTint="@color/primary">
@@ -244,6 +244,28 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="numberDecimal" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Property Status -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/statusLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:hint="Property Status"
+                    app:startIconDrawable="@drawable/ic_status"
+                    app:startIconTint="@color/primary"
+                    app:endIconDrawable="@drawable/ic_dropdown"
+                    app:endIconMode="custom">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none"
+                        android:focusable="false"
+                        android:clickable="true" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 

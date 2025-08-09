@@ -57,7 +57,10 @@ interface PropertyApi {
 
     @GET("property/{id}")
     suspend fun getPropertyById(@Path("id") id: Long): Response<BaseResponse<Property>>
-
+    
+    @POST("property/batch")
+    suspend fun getPropertiesByIds(@Body ids: List<Long>): Response<BaseResponse<List<Property>>>
+    
     @POST("property")
     suspend fun createProperty(@Body propertyRequest: PropertyRequest): Response<BaseResponse<Property>>
     

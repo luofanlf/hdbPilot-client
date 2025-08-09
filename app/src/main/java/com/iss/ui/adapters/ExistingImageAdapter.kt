@@ -56,9 +56,9 @@ class ExistingImageAdapter(
             newList.removeAt(index)
             existingImages = newList
             notifyItemRemoved(index)
-            println("从适配器中移除图片: ${propertyImage.id}, 位置: $index")
+            println("Removing image from adapter: ${propertyImage.id}, position: $index")
         } else {
-            println("未找到要删除的图片: ${propertyImage.id}")
+            println("Image not found for deletion: ${propertyImage.id}")
         }
     }
 } 

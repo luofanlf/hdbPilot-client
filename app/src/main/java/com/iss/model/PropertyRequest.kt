@@ -43,5 +43,5 @@ data class PropertyRequest(
     val resalePrice: Float,
     
     @SerializedName("status")
-    val status: String = "available"
+    val status: String
 ) 
