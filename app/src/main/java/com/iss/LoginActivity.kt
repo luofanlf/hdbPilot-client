@@ -149,11 +149,13 @@ class LoginActivity : AppCompatActivity() {
                             UserManager.init(this@LoginActivity)
                             UserManager.setCurrentUser(userProfile.id, userProfile.username)
                             
-                            // 更新SharedPreferences中的其他用户资料
+                            // 更新SharedPreferences中的其他用户资料（含头像、角色）
                             sharedPreferences.edit().apply {
                                 putString("nickname", userProfile.nickname)
                                 putString("email", userProfile.email)
                                 putString("bio", userProfile.bio)
+                                putString("avatar_url", userProfile.avatarUrl)
+                                putString("user_role", userProfile.role)
                                 apply()
                             }
 
