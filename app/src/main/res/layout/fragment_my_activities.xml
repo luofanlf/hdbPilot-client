@@ -108,7 +108,8 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
 
                 <!-- 我的收藏按钮 -->
                 <com.google.android.material.button.MaterialButton
@@ -116,7 +117,21 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
                     android:text="My Favorites"
+                    android:textSize="14sp"
+                    app:icon="@drawable/ic_activities"
+                    app:iconGravity="textStart"
+                    style="@style/SecondaryButtonStyle" />
+
+                <!-- 我的评论按钮 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnMyComments"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="My Comments"
                     android:textSize="14sp"
                     app:icon="@drawable/ic_activities"
                     app:iconGravity="textStart"

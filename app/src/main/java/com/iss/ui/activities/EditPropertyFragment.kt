@@ -284,14 +284,14 @@ class EditPropertyFragment : Fragment() {
                 
                 if (response.isSuccessful) {
                     uploadedCount++
-                    println("图片上传成功: $imageUri")
+                    println("Image uploaded successfully: $imageUri")
                 } else {
                     failedCount++
-                    println("图片上传失败: $imageUri, 错误码: ${response.code()}, 错误信息: ${response.errorBody()?.string()}")
+                    println("Image upload failed: $imageUri, error code: ${response.code()}, error message: ${response.errorBody()?.string()}")
                 }
             } catch (e: Exception) {
                 failedCount++
-                println("图片上传异常: $imageUri, 异常信息: ${e.message}")
+                println("Image upload exception: $imageUri, exception message: ${e.message}")
                 e.printStackTrace()
             }
         }
@@ -488,18 +488,18 @@ class EditPropertyFragment : Fragment() {
     }
 
     private fun deleteExistingImage(propertyImage: PropertyImage) {
-        println("开始删除图片: ${propertyImage.id}")
+        println("Starting to delete image: ${propertyImage.id}")
         lifecycleScope.launch {
             try {
                 val response = propertyApi.deletePropertyImage(propertyImage.id)
                 if (response.isSuccessful) {
-                    println("后端删除成功，开始更新UI")
-                    // 从适配器中移除（这会同时更新适配器的内部列表）
+                    println("Backend deletion successful, updating UI")
+                    // Remove from adapter (this will update the adapter's internal list)
                     existingImageAdapter.removeImage(propertyImage)
                     
-                    // 同步更新本地列表
+                    // Synchronize local list update
                     val removedCount = existingImages.removeAll { it.id == propertyImage.id }
-                    println("从本地列表移除: $removedCount 个项目")
+                    println("Removed from local list: $removedCount items")
                     
                     updateImageCount()
                     updateAddImageButton()

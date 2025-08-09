@@ -48,6 +48,9 @@
         <action
             android:id="@+id/action_myActivitiesFragment_to_favoriteListFragment"
             app:destination="@id/favoriteListFragment" />
+        <action
+            android:id="@+id/action_myActivitiesFragment_to_commentListFragment"
+            app:destination="@id/commentListFragment" />
     </fragment>
     
     <fragment
@@ -76,6 +79,15 @@
             app:destination="@id/propertyDetailFragment" />
     </fragment>
     
+    <fragment
+        android:id="@+id/commentListFragment"
+        android:name="com.iss.ui.comment.CommentListFragment"
+        android:label="My Comments"
+        tools:layout="@layout/fragment_comment_list">
+        <action
+            android:id="@+id/action_commentListFragment_to_propertyDetailFragment"
+            app:destination="@id/propertyDetailFragment" />
+    </fragment>
     
     <fragment
         android:id="@+id/propertyDetailFragment"

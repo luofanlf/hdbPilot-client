@@ -56,6 +56,11 @@ class MyActivitiesFragment : Fragment() {
         view.findViewById<View>(R.id.btnMyFavorites)?.setOnClickListener {
             findNavController().navigate(R.id.action_myActivitiesFragment_to_favoriteListFragment)
         }
+        
+        // 设置我的评论按钮点击事件
+        view.findViewById<View>(R.id.btnMyComments)?.setOnClickListener {
+            findNavController().navigate(R.id.action_myActivitiesFragment_to_commentListFragment)
+        }
     }
 
     private fun initViews(view: View) {

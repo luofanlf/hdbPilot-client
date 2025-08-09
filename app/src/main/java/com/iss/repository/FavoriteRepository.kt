@@ -23,10 +23,10 @@ class FavoriteRepository {
                 if (body?.code == 0) {
                     Result.success(body.data!!)
                 } else {
-                    Result.failure(Exception(body?.message ?: "添加收藏失败"))
+                    Result.failure(Exception(body?.message ?: "Failed to add favorite"))
                 }
             } else {
-                Result.failure(Exception("网络请求失败: ${response.code()}"))
+                Result.failure(Exception("Network request failed: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -43,10 +43,10 @@ class FavoriteRepository {
                 if (body?.code == 0) {
                     Result.success(body.data!!)
                 } else {
-                    Result.failure(Exception(body?.message ?: "取消收藏失败"))
+                    Result.failure(Exception(body?.message ?: "Failed to remove favorite"))
                 }
             } else {
-                Result.failure(Exception("网络请求失败: ${response.code()}"))
+                Result.failure(Exception("Network request failed: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -63,10 +63,10 @@ class FavoriteRepository {
                 if (body?.code == 0) {
                     Result.success(body.data!!)
                 } else {
-                    Result.failure(Exception(body?.message ?: "获取收藏列表失败"))
+                    Result.failure(Exception(body?.message ?: "Failed to get favorite list"))
                 }
             } else {
-                Result.failure(Exception("网络请求失败: ${response.code()}"))
+                Result.failure(Exception("Network request failed: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -83,10 +83,10 @@ class FavoriteRepository {
                 if (body?.code == 0) {
                     Result.success(body.data!!)
                 } else {
-                    Result.failure(Exception(body?.message ?: "检查收藏状态失败"))
+                    Result.failure(Exception(body?.message ?: "Failed to check favorite status"))
                 }
             } else {
-                Result.failure(Exception("网络请求失败: ${response.code()}"))
+                Result.failure(Exception("Network request failed: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -103,10 +103,10 @@ class FavoriteRepository {
                 if (body?.code == 0) {
                     Result.success(body.data!!)
                 } else {
-                    Result.failure(Exception(body?.message ?: "获取收藏房源ID列表失败"))
+                    Result.failure(Exception(body?.message ?: "Failed to get favorite property IDs"))
                 }
             } else {
-                Result.failure(Exception("网络请求失败: ${response.code()}"))
+                Result.failure(Exception("Network request failed: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

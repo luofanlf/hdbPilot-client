@@ -29,6 +29,7 @@ import com.iss.network.NetworkService
 import com.iss.repository.FavoriteRepository
 import com.iss.repository.PropertyRepository
 import com.iss.ui.adapters.PropertyImageAdapter
+import com.iss.utils.UserManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -144,10 +145,17 @@ class PropertyDetailFragment : Fragment() {
                         val commentApi = NetworkService.commentApi
 
                         // 使用干净请求体：CommentRequest，而非 Comment！
+                        val userId = UserManager.getCurrentUserId()
+                        if (userId == -1L) {
+                            Toast.makeText(requireContext(), "Please login to submit comment", Toast.LENGTH_SHORT).show()
+                            return@launch
+                        }
+                        
                         val comment = CommentRequest(
                             content = content,
                             rating = rating,
-                            propertyId = propertyId
+                            propertyId = propertyId,
+                            userId = userId
                         )
 
                         val response = commentApi.submitComment(comment)
