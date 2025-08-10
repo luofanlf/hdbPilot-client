@@ -27,10 +27,10 @@ jobs:
     - name: 缓存 Gradle
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: test
+        arguments: test --no-daemon --parallel --max-workers=2
 
     - name: 运行单元测试
-      run: ./gradlew test
+      run: ./gradlew test --no-daemon --parallel --max-workers=2
 
     - name: 上传测试报告
       uses: actions/upload-artifact@v4
@@ -54,6 +54,8 @@ jobs:
 
     - name: 缓存 Gradle
       uses: gradle/gradle-build-action@v2
+      with:
+        arguments: assembleDebug assembleRelease --no-daemon --parallel --max-workers=2
 
     # 如果是 main 分支，先恢复 keystore
     - name: 恢复 keystore
@@ -63,11 +65,11 @@ jobs:
 
     - name: 构建 Debug APK
       if: github.ref == 'refs/heads/develop'
-      run: ./gradlew assembleDebug
+      run: ./gradlew assembleDebug --no-daemon --parallel --max-workers=2
 
     - name: 构建 Release APK（未签名）
       if: github.ref == 'refs/heads/main'
-      run: ./gradlew assembleRelease
+      run: ./gradlew assembleRelease --no-daemon --parallel --max-workers=2
 
     - name: 使用 apksigner 签名 Release APK
       if: github.ref == 'refs/heads/main'

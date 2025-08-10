@@ -9,6 +9,7 @@
 - ✅ Release APK自动签名
 - ✅ GitHub Release自动创建
 - ✅ 分支策略：develop分支构建Debug版本，main分支构建Release版本
+- ✅ **性能优化**：禁用Gradle Daemon，启用并行构建和缓存
 
 ## 配置步骤
 
@@ -39,6 +40,19 @@ base64 -i your-release-key.keystore | tr -d '\n'
 3. 构建对应的APK
 4. 如果是main分支，自动签名并创建GitHub Release
 
+## 性能优化配置
+
+### CI/CD环境优化：
+- **禁用Gradle Daemon**: `--no-daemon` - 避免启动时间
+- **并行构建**: `--parallel` - 同时执行多个任务
+- **限制工作进程**: `--max-workers=2` - 控制资源使用
+- **启用缓存**: 利用GitHub Actions的Gradle缓存
+
+### 本地开发环境：
+- **启用Gradle Daemon**: 本地开发时保持启用
+- **并行构建**: 充分利用本地多核CPU
+- **构建缓存**: 加速重复构建
+
 ## 文件结构
 ```
 .github/
@@ -46,6 +60,7 @@ base64 -i your-release-key.keystore | tr -d '\n'
     android-ci-cd.yml    # CI/CD配置文件
 app/
   build.gradle.kts       # 应用构建配置（已简化）
+gradle.properties        # Gradle性能优化配置
 ```
 
 ## 为什么选择最小成本方案？
@@ -55,18 +70,21 @@ app/
 - ❌ 需要创建额外的配置文件
 - ❌ 增加维护成本和调试难度
 - ❌ 可能因为工具版本兼容性问题导致构建失败
+- ❌ Gradle Daemon在CI环境中增加启动时间
 
 ### 我们的解决方案：
 - ✅ 只保留核心功能：测试、构建、签名、发布
 - ✅ 无需额外配置文件
 - ✅ 使用Android官方推荐的Gradle配置
 - ✅ 快速部署，易于维护
+- ✅ **性能优化**：针对CI环境优化构建速度
 
 ## 注意事项
 - 确保你的项目有基本的单元测试
 - keystore文件必须正确配置
 - 第一次运行可能需要较长时间来下载依赖
 - 如果遇到构建失败，检查GitHub Secrets配置和本地构建是否正常
+- **CI环境会自动禁用Gradle Daemon以优化性能**
 
 ## 故障排除
 如果遇到构建失败：
@@ -74,6 +92,7 @@ app/
 2. 查看Actions日志了解具体错误
 3. 确保本地项目能够正常构建（运行 `./gradlew assembleDebug`）
 4. 检查Gradle版本兼容性
+5. **如果构建卡住，检查是否在等待Gradle Daemon启动**
 
 ## 扩展建议（可选）
 如果后续需要添加更多功能，可以考虑：
@@ -82,4 +101,13 @@ app/
 - 添加安全检查
 - 添加性能测试
 
-但建议先让基础pipeline稳定运行，再逐步添加功能。 
+但建议先让基础pipeline稳定运行，再逐步添加功能。
+
+## 性能对比
+| 配置 | 本地开发 | CI/CD环境 |
+|------|----------|-----------|
+| Gradle Daemon | ✅ 启用 | ❌ 禁用 |
+| 并行构建 | ✅ 启用 | ✅ 启用 |
+| 工作进程数 | 自动 | 限制为2 |
+| 构建缓存 | ✅ 启用 | ✅ 启用 |
+| 配置缓存 | ✅ 启用 | ✅ 启用 | 
