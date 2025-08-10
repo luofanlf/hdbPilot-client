@@ -126,7 +126,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: android-apk
-        path: app/build/outputs/apk/**/*.apk
+        path: |
+          app/build/outputs/apk/debug/*.apk
+          app/build/outputs/apk/release/*.apk
 
   deploy:
     needs: build-android
@@ -139,10 +141,34 @@ jobs:
       with:
         name: android-apk
 
+    - name: 列出下载的文件
+      run: |
+        echo "当前目录内容:"
+        ls -la
+        echo "下载的artifact内容:"
+        find . -name "*.apk" -type f
+        echo "APK文件详细信息:"
+        if [ -f "*.apk" ]; then
+          echo "找到APK文件"
+          ls -la *.apk
+        else
+          echo "没有找到APK文件"
+          echo "尝试查找所有APK文件:"
+          find . -name "*.apk" -type f -exec ls -la {} \;
+        fi
+
+    - name: 检查GitHub权限
+      run: |
+        echo "检查GitHub权限..."
+        echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN != '' && '已设置' || '未设置' }}"
+        echo "当前分支: ${{ github.ref_name }}"
+        echo "事件类型: ${{ github.event_name }}"
+
     - name: 创建 Release
       uses: softprops/action-gh-release@v1
       with:
-        files: app/build/outputs/apk/**/*.apk
+        files: |
+          *.apk
         tag_name: v${{ github.run_number }}
         name: Release v${{ github.run_number }}
         body: |
@@ -151,5 +177,6 @@ jobs:
           - 构建时间: ${{ github.event.head_commit.timestamp }}
           - 提交: ${{ github.sha }}
           - 分支: ${{ github.ref_name }}
+          - 版本: v${{ github.run_number }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
