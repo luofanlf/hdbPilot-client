@@ -122,6 +122,26 @@ jobs:
           "$APK_PATH"
         echo "签名完成: $APK_PATH"
 
+    - name: 检查APK文件
+      run: |
+        echo "=== 检查APK文件 ==="
+        echo "Debug APK:"
+        if [ -d "app/build/outputs/apk/debug" ]; then
+          ls -la app/build/outputs/apk/debug/
+        else
+          echo "Debug目录不存在"
+        fi
+        echo ""
+        echo "Release APK:"
+        if [ -d "app/build/outputs/apk/release" ]; then
+          ls -la app/build/outputs/apk/release/
+        else
+          echo "Release目录不存在"
+        fi
+        echo ""
+        echo "所有APK文件:"
+        find app/build/outputs/apk -name "*.apk" -type f
+
     - name: 上传 APK 到 Artifact
       uses: actions/upload-artifact@v4
       with:
@@ -129,6 +149,7 @@ jobs:
         path: |
           app/build/outputs/apk/debug/*.apk
           app/build/outputs/apk/release/*.apk
+        if-no-files-found: error
 
   deploy:
     needs: build-android
@@ -141,34 +162,43 @@ jobs:
       with:
         name: android-apk
 
-    - name: 列出下载的文件
+    - name: 详细调试信息
       run: |
-        echo "当前目录内容:"
+        echo "=== 当前工作目录 ==="
+        pwd
+        echo ""
+        echo "=== 当前目录内容 ==="
         ls -la
-        echo "下载的artifact内容:"
+        echo ""
+        echo "=== 递归查找所有文件 ==="
+        find . -type f
+        echo ""
+        echo "=== 查找APK文件 ==="
         find . -name "*.apk" -type f
-        echo "APK文件详细信息:"
-        if [ -f "*.apk" ]; then
-          echo "找到APK文件"
-          ls -la *.apk
+        echo ""
+        echo "=== 检查artifact目录 ==="
+        if [ -d "android-apk" ]; then
+          echo "android-apk目录存在"
+          ls -la android-apk/
+          if [ -d "android-apk/app" ]; then
+            echo "android-apk/app目录内容:"
+            ls -la android-apk/app/
+          fi
         else
-          echo "没有找到APK文件"
-          echo "尝试查找所有APK文件:"
-          find . -name "*.apk" -type f -exec ls -la {} \;
+          echo "android-apk目录不存在"
         fi
-
-    - name: 检查GitHub权限
-      run: |
-        echo "检查GitHub权限..."
+        echo ""
+        echo "=== 环境变量信息 ==="
         echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN != '' && '已设置' || '未设置' }}"
         echo "当前分支: ${{ github.ref_name }}"
         echo "事件类型: ${{ github.event_name }}"
+        echo "工作流运行ID: ${{ github.run_id }}"
 
     - name: 创建 Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          *.apk
+          **/*.apk
         tag_name: v${{ github.run_number }}
         name: Release v${{ github.run_number }}
         body: |
