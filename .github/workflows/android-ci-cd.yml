@@ -2,13 +2,9 @@ name: Android CI/CD
 
 on:
   push:
-    branches:
-      - main
-      - develop
+    branches: [ main, develop ]
   pull_request:
-    branches:
-      - main
-      - develop
+    branches: [ main, develop ]
 
 jobs:
   test:
@@ -24,13 +20,33 @@ jobs:
         distribution: temurin
         java-version: '17'
 
-    - name: 缓存 Gradle
-      uses: gradle/gradle-build-action@v2
+    # 优化：分层缓存策略
+    - name: 缓存 Gradle 依赖
+      uses: actions/cache@v4
       with:
-        arguments: test --no-daemon --parallel --max-workers=2
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-deps-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-deps-
 
+    - name: 缓存 Gradle 构建输出
+      uses: actions/cache@v4
+      with:
+        path: |
+          .gradle
+          build
+          app/build
+        key: ${{ runner.os }}-gradle-build-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}-${{ hashFiles('**/src/**') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-build-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}-
+
+    # 使用CI专用配置
     - name: 运行单元测试
-      run: ./gradlew test --no-daemon --parallel --max-workers=2
+      run: ./gradlew test --no-daemon --parallel --max-workers=2 -Dorg.gradle.jvmargs="-Xmx4096m" --stacktrace
+      env:
+        GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m"
 
     - name: 上传测试报告
       uses: actions/upload-artifact@v4
@@ -52,10 +68,27 @@ jobs:
         distribution: temurin
         java-version: '17'
 
-    - name: 缓存 Gradle
-      uses: gradle/gradle-build-action@v2
+    # 优化：分层缓存策略
+    - name: 缓存 Gradle 依赖
+      uses: actions/cache@v4
       with:
-        arguments: assembleDebug assembleRelease --no-daemon --parallel --max-workers=2
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-deps-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-deps-
+
+    - name: 缓存 Gradle 构建输出
+      uses: actions/cache@v4
+      with:
+        path: |
+          .gradle
+          build
+          app/build
+        key: ${{ runner.os }}-gradle-build-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}-${{ hashFiles('**/src/**') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-build-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}-
 
     # 如果是 main 分支，先恢复 keystore
     - name: 恢复 keystore
@@ -63,13 +96,18 @@ jobs:
       run: |
         echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > release.keystore
 
+    # 使用CI专用配置构建
     - name: 构建 Debug APK
       if: github.ref == 'refs/heads/develop'
-      run: ./gradlew assembleDebug --no-daemon --parallel --max-workers=2
+      run: ./gradlew assembleDebug --no-daemon --parallel --max-workers=2 -Dorg.gradle.jvmargs="-Xmx4096m" --stacktrace
+      env:
+        GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m"
 
     - name: 构建 Release APK（未签名）
       if: github.ref == 'refs/heads/main'
-      run: ./gradlew assembleRelease --no-daemon --parallel --max-workers=2
+      run: ./gradlew assembleRelease --no-daemon --parallel --max-workers=2 -Dorg.gradle.jvmargs="-Xmx4096m" --stacktrace
+      env:
+        GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m"
 
     - name: 使用 apksigner 签名 Release APK
       if: github.ref == 'refs/heads/main'

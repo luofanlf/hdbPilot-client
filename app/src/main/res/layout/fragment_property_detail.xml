@@ -465,7 +465,7 @@
             android:indeterminateTint="@color/primary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/propertyImageView" />
+            app:layout_constraintTop_toBottomOf="@id/propertyImageViewPager" />
 
         <TextView
             android:id="@+id/errorText"
@@ -478,7 +478,7 @@
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/propertyImageView" />
+            app:layout_constraintTop_toBottomOf="@id/propertyImageViewPager" />
 
         <!-- 评论与评分区域 -->
         <com.google.android.material.card.MaterialCardView
