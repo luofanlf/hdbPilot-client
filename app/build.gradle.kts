@@ -37,6 +37,14 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+        animationsDisabled = true
+    }
 }
 
 dependencies {
@@ -59,8 +67,6 @@ dependencies {
     implementation("androidx.fragment:fragment-ktx:1.6.2")
     implementation("com.google.android.gms:play-services-location:21.0.1")
 
-
-
     // 网络请求相关
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
@@ -76,6 +82,7 @@ dependencies {
     // Glide 图片加载库
     implementation("com.github.bumptech.glide:glide:4.16.0")
     
+    // 测试依赖 - 只保留基本的
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

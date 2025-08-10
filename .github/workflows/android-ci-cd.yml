@@ -1,0 +1,115 @@
+name: Android CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置 JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+
+    - name: 缓存 Gradle
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: test
+
+    - name: 运行单元测试
+      run: ./gradlew test
+
+    - name: 上传测试报告
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-reports
+        path: app/build/test-results/
+
+  build-android:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置 JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+
+    - name: 缓存 Gradle
+      uses: gradle/gradle-build-action@v2
+
+    # 如果是 main 分支，先恢复 keystore
+    - name: 恢复 keystore
+      if: github.ref == 'refs/heads/main'
+      run: |
+        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > release.keystore
+
+    - name: 构建 Debug APK
+      if: github.ref == 'refs/heads/develop'
+      run: ./gradlew assembleDebug
+
+    - name: 构建 Release APK（未签名）
+      if: github.ref == 'refs/heads/main'
+      run: ./gradlew assembleRelease
+
+    - name: 使用 apksigner 签名 Release APK
+      if: github.ref == 'refs/heads/main'
+      run: |
+        APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+        echo "找到 APK: $APK_PATH"
+        $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
+          --ks release.keystore \
+          --ks-key-alias "${{ secrets.KEY_ALIAS }}" \
+          --ks-pass pass:"${{ secrets.KEYSTORE_PASSWORD }}" \
+          --key-pass pass:"${{ secrets.KEY_PASSWORD }}" \
+          "$APK_PATH"
+        echo "签名完成: $APK_PATH"
+
+    - name: 上传 APK 到 Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-apk
+        path: app/build/outputs/apk/**/*.apk
+
+  deploy:
+    needs: build-android
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 下载 APK
+      uses: actions/download-artifact@v4
+      with:
+        name: android-apk
+
+    - name: 创建 Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: app/build/outputs/apk/**/*.apk
+        tag_name: v${{ github.run_number }}
+        name: Release v${{ github.run_number }}
+        body: |
+          Android APK 自动构建发布
+          
+          - 构建时间: ${{ github.event.head_commit.timestamp }}
+          - 提交: ${{ github.sha }}
+          - 分支: ${{ github.ref_name }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
