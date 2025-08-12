@@ -2,9 +2,9 @@ name: Android CI/CD
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, 'Feature/*' ]  # 添加 Feature/* 模式
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, 'Feature/*' ]
 
 jobs:
   test:
@@ -98,7 +98,7 @@ jobs:
 
     # 使用CI专用配置构建
     - name: 构建 Debug APK
-      if: github.ref == 'refs/heads/develop'
+      if: github.ref != 'refs/heads/main'  # 所有非main分支都构建debug APK
       run: ./gradlew assembleDebug --no-daemon --parallel --max-workers=2 -Dorg.gradle.jvmargs="-Xmx4096m" --stacktrace
       env:
         GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m"
