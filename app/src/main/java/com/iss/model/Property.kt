@@ -20,6 +20,8 @@ data class Property(
     val resalePrice: Float,
     val forecastPrice: Float? = null, // 设为可选，因为后端可能不返回
     val status: String,
+    val sellerName: String? = null, // 新增字段：卖家用户名
+    val sellerEmail: String? = null, // 新增字段：卖家邮箱
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
     val imageUrl: String? = null,

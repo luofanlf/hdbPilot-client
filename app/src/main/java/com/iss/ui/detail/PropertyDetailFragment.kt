@@ -50,7 +50,8 @@ class PropertyDetailFragment : Fragment() {
     private lateinit var flatModelText: TextView
     private lateinit var topYearText: TextView
     private lateinit var statusText: TextView
-    private lateinit var sellerIdText: TextView
+    private lateinit var sellerNameText: TextView
+    private lateinit var sellerEmailText: TextView
     private lateinit var loadingProgressBar: ProgressBar
     private lateinit var errorText: TextView
     private lateinit var btnGoToPrediction: Button
@@ -237,7 +238,8 @@ class PropertyDetailFragment : Fragment() {
         flatModelText = view.findViewById(R.id.flatModelText)
         topYearText = view.findViewById(R.id.topYearText)
         statusText = view.findViewById(R.id.statusText)
-        sellerIdText = view.findViewById(R.id.sellerIdText)
+        sellerNameText = view.findViewById(R.id.sellerNameText)
+        sellerEmailText = view.findViewById(R.id.sellerEmailText)
         loadingProgressBar = view.findViewById(R.id.loadingProgressBar)
         errorText = view.findViewById(R.id.errorText)
         btnGoToPrediction = view.findViewById(R.id.btnGoToPrediction)
@@ -400,7 +402,8 @@ class PropertyDetailFragment : Fragment() {
         flatModelText.text = property.flatModel
         topYearText.text = property.topYear.toString()
         statusText.text = property.status
-        sellerIdText.text = property.sellerId.toString()
+        sellerNameText.text = property.sellerName ?: "N/A"
+        sellerEmailText.text = property.sellerEmail ?: "N/A"
 
         hideError()
     }

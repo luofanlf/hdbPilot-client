@@ -439,16 +439,39 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Seller ID:"
+                        android:text="Seller:"
                         android:textColor="@color/text_secondary" />
 
                     <TextView
-                        android:id="@+id/sellerIdText"
+                        android:id="@+id/sellerNameText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
-                        tools:text="101" />
+                        tools:text="john_doe" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Contact:"
+                        android:textColor="@color/text_secondary" />
+
+                    <TextView
+                        android:id="@+id/sellerEmailText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        tools:text="luofan036@gmail.com" />
 
                 </LinearLayout>
 
