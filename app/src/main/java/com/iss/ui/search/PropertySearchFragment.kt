@@ -11,6 +11,8 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -44,7 +46,7 @@ class PropertySearchFragment : Fragment() {
     
     // Filter form fields
     private lateinit var postalCodeEditText: TextInputEditText
-    private lateinit var townEditText: TextInputEditText
+    private lateinit var townAutoCompleteTextView: AutoCompleteTextView
     private lateinit var bedroomMinEditText: TextInputEditText
     private lateinit var bedroomMaxEditText: TextInputEditText
     private lateinit var bathroomMinEditText: TextInputEditText
@@ -70,6 +72,7 @@ class PropertySearchFragment : Fragment() {
         initializeViews(view)
         setupRecyclerView()
         setupClickListeners()
+        setupTownDropdown()
     }
 
     private fun initializeViews(view: View) {
@@ -84,7 +87,7 @@ class PropertySearchFragment : Fragment() {
         
         // Filter form fields
         postalCodeEditText = view.findViewById(R.id.postalCodeEditText)
-        townEditText = view.findViewById(R.id.townEditText)
+        townAutoCompleteTextView = view.findViewById(R.id.townAutoCompleteTextView)
         bedroomMinEditText = view.findViewById(R.id.bedroomMinEditText)
         bedroomMaxEditText = view.findViewById(R.id.bedroomMaxEditText)
         bathroomMinEditText = view.findViewById(R.id.bathroomMinEditText)
@@ -126,6 +129,20 @@ class PropertySearchFragment : Fragment() {
                 }
             })
         }
+    }
+
+    private fun setupTownDropdown() {
+        val towns = arrayOf(
+            "Ang Mo Kio", "Bedok", "Bishan", "Boon Lay", "Bukit Batok", "Bukit Merah",
+            "Bukit Panjang", "Bukit Timah", "Central Area", "Choa Chu Kang", "Clementi",
+            "Geylang", "Hougang", "Jurong East", "Jurong West", "Kallang", "Lim Chu Kang",
+            "Marine Parade", "Pasir Ris", "Punggol", "Queenstown", "Sembawang", "Sengkang",
+            "Serangoon", "Tampines", "Toa Payoh", "Woodlands", "Yishun"
+        )
+        
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, towns)
+        townAutoCompleteTextView.setAdapter(adapter)
+        townAutoCompleteTextView.threshold = 1 // 输入1个字符就开始显示建议
     }
 
     private fun setupClickListeners() {
@@ -290,12 +307,12 @@ class PropertySearchFragment : Fragment() {
         android.util.Log.d("PropertySearchFragment", "UI elements check:")
         android.util.Log.d("PropertySearchFragment", "  searchEditText: ${searchEditText != null}")
         android.util.Log.d("PropertySearchFragment", "  postalCodeEditText: ${postalCodeEditText != null}")
-        android.util.Log.d("PropertySearchFragment", "  townEditText: ${townEditText != null}")
+        android.util.Log.d("PropertySearchFragment", "  townAutoCompleteTextView: ${townAutoCompleteTextView != null}")
         
         // 使用搜索框的输入作为listingTitle
         val listingTitle = searchEditText.text?.toString()?.trim().takeIf { !it.isNullOrEmpty() }
         val postalCode = postalCodeEditText.text?.toString()?.trim().takeIf { !it.isNullOrEmpty() }
-        val town = townEditText.text?.toString()?.trim().takeIf { !it.isNullOrEmpty() }
+        val town = townAutoCompleteTextView.text?.toString()?.trim().takeIf { !it.isNullOrEmpty() }
         val bedroomNumberMin = bedroomMinEditText.text?.toString()?.toIntOrNull()
         val bedroomNumberMax = bedroomMaxEditText.text?.toString()?.toIntOrNull()
         val bathroomNumberMin = bathroomMinEditText.text?.toString()?.toIntOrNull()
@@ -339,7 +356,7 @@ class PropertySearchFragment : Fragment() {
     private fun clearFilters() {
         searchEditText.text?.clear()
         postalCodeEditText.text?.clear()
-        townEditText.text?.clear()
+        townAutoCompleteTextView.text?.clear()
         bedroomMinEditText.text?.clear()
         bedroomMaxEditText.text?.clear()
         bathroomMinEditText.text?.clear()
