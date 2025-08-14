@@ -30,6 +30,7 @@ import java.io.File
 import java.io.InputStream
 import java.time.LocalDateTime
 import com.google.android.material.textfield.TextInputLayout
+import com.iss.PredActivityforseller
 
 class AddPropertyFragment : Fragment() {
 
@@ -395,7 +396,7 @@ class AddPropertyFragment : Fragment() {
     }
 
     private fun sendDataToPredictionActivity() {
-        val intent = Intent(requireContext(), PredActivity::class.java).apply {
+        val intent = Intent(requireContext(), PredActivityforseller::class.java).apply {
             putExtra("floorAreaSqm", binding.etFloorAreaSqm.text.toString().toFloatOrNull() ?: 0f)
             putExtra("town", selectedTown)
             putExtra("flatModel", selectedFlatModel)

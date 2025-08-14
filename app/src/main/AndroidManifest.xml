@@ -41,6 +41,8 @@
         </activity>
         <activity android:name=".PredActivity"
             android:exported="false"> </activity>
+        <activity android:name=".PredActivityforseller"
+            android:exported="false"> </activity>
     </application>
 
 </manifest>
