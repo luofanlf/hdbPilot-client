@@ -81,9 +81,11 @@ class AddPropertyFragment : Fragment() {
     )
 
     private val flatModels = arrayOf(
-        "1-Room", "2-Room", "3-Room", "4-Room", "5-Room",
-        "3-Room Executive", "4-Room Executive", "5-Room Executive",
-        "Multi-Generation", "Studio Apartment", "Type S1", "Type S2"
+        "2-ROOM", "3GEN", "ADJOINED FLAT", "APARTMENT", "DBSS", "IMPROVED", 
+        "IMPROVED-MAISONETTE", "MAISONETTE", "MODEL A", "MODEL A-MAISONETTE", 
+        "MODEL A2", "MULTI GENERATION", "NEW GENERATION", "PREMIUM APARTMENT", 
+        "PREMIUM APARTMENT LOFT", "PREMIUM MAISONETTE", "SIMPLIFIED", "STANDARD", 
+        "TERRACE", "TYPE S1", "TYPE S2"
     )
 
     private val years = (1960..2024).toList().map { it.toString() }.toTypedArray()
