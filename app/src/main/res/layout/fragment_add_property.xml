@@ -344,15 +344,6 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Property Images"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="16dp" />
-
                     <!-- Image Upload Button -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnAddImage"
@@ -373,6 +364,15 @@
                         android:visibility="gone" />
 
                     <!-- Image Count Text -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:text="Property Images"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
                     <TextView
                         android:id="@+id/tvImageCount"
                         android:layout_width="wrap_content"
@@ -410,6 +410,12 @@
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
                         android:layout_marginBottom="16dp" />
+
+                    <Button
+                        android:id="@+id/btnPredicate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Predicate" />
 
                     <!-- Resale Price -->
                     <com.google.android.material.textfield.TextInputLayout
