@@ -101,7 +101,7 @@ class RegisterActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 // Backend expects username, password, confirmPassword
-                val request = UserRegisterRequest(username, password, confirmPassword)
+                val request = UserRegisterRequest(username, password, confirmPassword,email)
                 val response = authApi.registerUser(request)
 
                 withContext(Dispatchers.Main) {
