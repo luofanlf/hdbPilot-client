@@ -1,7 +1,6 @@
 package com.iss.ui.map
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Address
@@ -15,7 +14,9 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.location.LocationServices
@@ -39,8 +40,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.util.Locale
-import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.CancellationException
 
 class MapFragment : Fragment(), OnMapReadyCallback {
 
@@ -56,15 +55,15 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     // In-memory cache to avoid duplicate Geocode requests
     private val geocodeCache = mutableMapOf<String, LatLng>()
 
-    private val locationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) moveToMyLocation()
-            else showError("Location permission denied")
-        }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         highlightPropertyId = arguments?.getLong("highlight_property_id")?.takeIf { it != 0L }
+    }
+    private fun safeZoom(action: () -> Unit) {
+        if (::googleMap.isInitialized)
+            action()
+        else
+            showError("Map not ready")
     }
 
     override fun onCreateView(
@@ -88,18 +87,25 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         loadPropertyMarkers()
     }
 
-    private fun checkLocationPermissionAndMove() {
-        when {
-            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                    == PackageManager.PERMISSION_GRANTED -> moveToMyLocation()
-            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) ->
-                showError("Location permission needed")
-            else -> locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+    private val locationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) moveToMyLocation()
+            else showError("Location permission denied")
         }
-    }
 
-    private fun safeZoom(action: () -> Unit) {
-        if (::googleMap.isInitialized) action() else showError("Map not ready")
+    private fun checkLocationPermissionAndMove() {
+        val permissionStatus = ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+
+        if (permissionStatus == PackageManager.PERMISSION_GRANTED) {
+            moveToMyLocation()
+        } else if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
+            showError("Location permission needed")
+        } else {
+            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
     }
 
     private fun setupCluster() {
@@ -140,52 +146,52 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun loadPropertyMarkers() {
+
         viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val properties = withContext(Dispatchers.IO) { propertyRepository.getPropertyList().getOrThrow() }
-                propertyList.clear()
-                propertyList.addAll(properties)
-                clusterManager.clearItems()
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                try {
+                    val properties = withContext(Dispatchers.IO) {
+                        propertyRepository.getPropertyList().getOrThrow()
+                    }
 
-                val geocoder = Geocoder(requireContext(), Locale.getDefault())
+                    propertyList.clear()
+                    propertyList.addAll(properties)
+                    clusterManager.clearItems()
 
-                val latLngList = propertyList.map { property ->
-                    async(Dispatchers.IO) {
-                        try {
-                            property.postalCode?.let { postal ->
-                                geocodeCache[postal] ?: runCatching {
-                                    withTimeout(5000L) {
-                                        geocodeAddressSafe(geocoder, postal)?.also { geocodeCache[postal] = it }
+                    val geocoder = Geocoder(requireContext(), Locale.getDefault())
+
+                    val latLngList = propertyList.map { property ->
+                        async(Dispatchers.IO) {
+                            try {
+                                property.postalCode?.let { postal ->
+                                    geocodeCache[postal] ?: geocodeAddressSafe(geocoder, postal)?.also {
+                                        geocodeCache[postal] = it
                                     }
-                                }.getOrNull()
-                            }
-                        } catch (e: CancellationException) {
-                            null
-                        } catch (e: Exception) {
-                            null
+                                }
+                            } catch (_: Exception) { null }
+                        }
+                    }.awaitAll()
+
+                    propertyList.zip(latLngList).forEach { (property, latLng) ->
+                        latLng?.let {
+                            property.latLng = it
+                            clusterManager.addItem(PropertyClusterItem(property, it))
                         }
                     }
-                }.awaitAll()
 
-                propertyList.zip(latLngList).forEach { (property, latLng) ->
-                    latLng?.let {
-                        property.latLng = it
-                        clusterManager.addItem(PropertyClusterItem(property, it))
-                    }
+                    clusterManager.cluster()
+
+                    highlightPropertyId?.let { id ->
+                        propertyList.find { it.id == id }?.latLng?.let { highlight(it) }
+                            ?: moveToDefaultLocation()
+                    } ?: moveToDefaultLocation()
+
+                } catch (e: Exception) {
+                    showError("Failed to load properties: ${e.message}")
                 }
-
-                clusterManager.cluster()
-
-                highlightPropertyId?.let { id ->
-                    propertyList.find { it.id == id }?.latLng?.let { highlight(it) } ?: moveToDefaultLocation()
-                } ?: moveToDefaultLocation()
-
-            } catch (e: Exception) {
-                showError("Failed to load properties: ${e.message}")
             }
         }
     }
-
 
     private suspend fun geocodeAddressSafe(geocoder: Geocoder, locationName: String): LatLng? =
         suspendCancellableCoroutine { cont ->
@@ -201,7 +207,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                     val address = geocoder.getFromLocationName(locationName, 1)?.firstOrNull()
                     cont.resume(address?.let { LatLng(it.latitude, it.longitude) }, null)
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 cont.resume(null, null)
             }
         }
