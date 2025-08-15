@@ -40,7 +40,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.util.Locale
 import kotlinx.coroutines.withTimeout
-
+import kotlinx.coroutines.CancellationException
 
 class MapFragment : Fragment(), OnMapReadyCallback {
 
@@ -58,7 +58,8 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
     private val locationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) moveToMyLocation() else showError("Location permission denied")
+            if (granted) moveToMyLocation()
+            else showError("Location permission denied")
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,7 +67,9 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         highlightPropertyId = arguments?.getLong("highlight_property_id")?.takeIf { it != 0L }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View {
         _binding = FragmentMapBinding.inflate(inflater, container, false)
         binding.mapView.onCreate(savedInstanceState)
         binding.mapView.getMapAsync(this)
@@ -87,8 +90,10 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
     private fun checkLocationPermissionAndMove() {
         when {
-            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED -> moveToMyLocation()
-            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> showError("Location permission needed")
+            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED -> moveToMyLocation()
+            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) ->
+                showError("Location permission needed")
             else -> locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
@@ -116,8 +121,10 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun navigateToPropertyDetail(propertyId: Long) {
-        findNavController().navigate(R.id.action_mapFragment_to_propertyDetailFragment,
-            Bundle().apply { putLong("property_id", propertyId) })
+        findNavController().navigate(
+            R.id.action_mapFragment_to_propertyDetailFragment,
+            Bundle().apply { putLong("property_id", propertyId) }
+        )
     }
 
     private fun showClusterPropertyListDialog(properties: List<Property>) {
@@ -132,13 +139,6 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         dialog.show()
     }
 
-    /**
-     * High-performance property marker loading:
-     * 1. Concurrent Geocode requests (coroutine async)
-     * 2. Supports timeout
-     * 3. Uses cache to avoid duplicate lookups
-     * 4. Lifecycle-aware
-     */
     private fun loadPropertyMarkers() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -149,19 +149,23 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
                 val geocoder = Geocoder(requireContext(), Locale.getDefault())
 
-                val latLngDeferred = propertyList.map { property ->
+                val latLngList = propertyList.map { property ->
                     async(Dispatchers.IO) {
-                        property.postalCode?.let { postal ->
-                            geocodeCache[postal] ?: runCatching {
-                                withTimeout(5000L) { // Timeout: 5 seconds
-                                    geocodeAddress(geocoder, postal)?.also { geocodeCache[postal] = it }
-                                }
-                            }.getOrNull()
+                        try {
+                            property.postalCode?.let { postal ->
+                                geocodeCache[postal] ?: runCatching {
+                                    withTimeout(5000L) {
+                                        geocodeAddressSafe(geocoder, postal)?.also { geocodeCache[postal] = it }
+                                    }
+                                }.getOrNull()
+                            }
+                        } catch (e: CancellationException) {
+                            null
+                        } catch (e: Exception) {
+                            null
                         }
                     }
-                }
-
-                val latLngList = latLngDeferred.awaitAll()
+                }.awaitAll()
 
                 propertyList.zip(latLngList).forEach { (property, latLng) ->
                     latLng?.let {
@@ -182,22 +186,24 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    private suspend fun geocodeAddress(geocoder: Geocoder, locationName: String): LatLng? =
-        withContext(Dispatchers.IO) {
+
+    private suspend fun geocodeAddressSafe(geocoder: Geocoder, locationName: String): LatLng? =
+        suspendCancellableCoroutine { cont ->
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    suspendCancellableCoroutine<LatLng?> { cont ->
-                        geocoder.getFromLocationName(locationName, 1, object : Geocoder.GeocodeListener {
-                            override fun onGeocode(results: MutableList<Address>) {
-                                cont.resume(results.firstOrNull()?.let { LatLng(it.latitude, it.longitude) }, null)
-                            }
-                            override fun onError(errorMessage: String?) { cont.resume(null, null) }
-                        })
-                    }
+                    geocoder.getFromLocationName(locationName, 1, object : Geocoder.GeocodeListener {
+                        override fun onGeocode(results: MutableList<Address>) {
+                            cont.resume(results.firstOrNull()?.let { LatLng(it.latitude, it.longitude) }, null)
+                        }
+                        override fun onError(errorMessage: String?) { cont.resume(null, null) }
+                    })
                 } else {
-                    geocoder.getFromLocationName(locationName, 1)?.firstOrNull()?.let { LatLng(it.latitude, it.longitude) }
+                    val address = geocoder.getFromLocationName(locationName, 1)?.firstOrNull()
+                    cont.resume(address?.let { LatLng(it.latitude, it.longitude) }, null)
                 }
-            } catch (e: Exception) { null }
+            } catch (e: Exception) {
+                cont.resume(null, null)
+            }
         }
 
     private fun highlight(latLng: LatLng) {
@@ -210,14 +216,17 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(singapore, 11f))
     }
 
-    @SuppressLint("MissingPermission")
     private fun moveToMyLocation() {
         if (!::googleMap.isInitialized) return
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) return
+
         val locationProvider = LocationServices.getFusedLocationProviderClient(requireActivity())
         locationProvider.lastLocation.addOnSuccessListener { location ->
             val latLng = location?.let { LatLng(it.latitude, it.longitude) } ?: LatLng(1.3521, 103.8198)
             googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, if (location != null) 15f else 11f))
         }.addOnFailureListener { showError("Failed to retrieve location") }
+
         googleMap.isMyLocationEnabled = true
     }
 
@@ -227,4 +236,5 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     override fun onPause() { super.onPause(); binding.mapView.onPause() }
     override fun onDestroyView() { super.onDestroyView(); binding.mapView.onDestroy(); _binding = null }
     override fun onLowMemory() { super.onLowMemory(); binding.mapView.onLowMemory() }
+
 }
