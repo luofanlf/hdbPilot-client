@@ -57,8 +57,10 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        highlightPropertyId = arguments?.getLong("highlight_property_id")?.takeIf { it != 0L }
+        val idFromArgs = arguments?.getLong("highlight_property_id") ?: 0L
+        highlightPropertyId = if (idFromArgs != 0L) idFromArgs else null
     }
+
     private fun safeZoom(action: () -> Unit) {
         if (::googleMap.isInitialized)
             action()
@@ -224,17 +226,33 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
     private fun moveToMyLocation() {
         if (!::googleMap.isInitialized) return
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED) return
+
+        val permissionGranted = ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!permissionGranted) return
 
         val locationProvider = LocationServices.getFusedLocationProviderClient(requireActivity())
-        locationProvider.lastLocation.addOnSuccessListener { location ->
-            val latLng = location?.let { LatLng(it.latitude, it.longitude) } ?: LatLng(1.3521, 103.8198)
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, if (location != null) 15f else 11f))
-        }.addOnFailureListener { showError("Failed to retrieve location") }
+
+        locationProvider.lastLocation
+            .addOnSuccessListener { location ->
+                val latLng = if (location != null) {
+                    LatLng(location.latitude, location.longitude)
+                } else {
+                    LatLng(1.3521, 103.8198)
+                }
+
+                val zoomLevel = if (location != null) 15f else 11f
+                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoomLevel))
+            }
+            .addOnFailureListener {
+                showError("Failed to retrieve location")
+            }
 
         googleMap.isMyLocationEnabled = true
     }
+
 
     private fun showError(msg: String) = Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
 
